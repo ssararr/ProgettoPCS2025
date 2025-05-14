@@ -1,4 +1,6 @@
 # ProgettoPCS2025
+sto modificando 
 
 Ciao ho scritto io sono Mattia
-Ora do fastidio modificando altre cose
+Ciao io sono Nico 
+Ciao io sono Nico, no silenzio! 
