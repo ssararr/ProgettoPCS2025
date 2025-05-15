@@ -40,21 +40,12 @@ namespace PolyhedraLibrary {
         vector<unsigned int> Cell2DsNumVertices; //Salvo il numero di vertici di ogni faccia (poligono)
         vector<unsigned int> Cell2DsNumEdges; //Salvo il numero di spigoli di ogni faccia (poligono)
 
-<<<<<<< Updated upstream
-        vector<unsigned int> Cell3DsFaces; //Salvo gli ID delle facce (poligoni) che compongono il poliedro
-        vector<unsigned int> Cell3DsEdges; //Salvo gli ID degli spigoli che compongono il poliedro
-        vector<unsigned int> Cell3DsVertices; //Salvo gli ID dei vertici che compongono il poliedro
-        unsigned int Cell3DsNumFaces; 
-        unsigned int Cell3DsNumEdges;
-        unsigned int Cell3DsNumVertices;                
-=======
+              
         // Vettori contenenti ID dei vertici, archi e facce del poliedro
         vector<unsigned int> Cell3DsEdges;
         vector<unsigned int> Cell3DsVertices;
         vector<unsigned int> Cell3DsFaces;
 
-        
->>>>>>> Stashed changes
     };
 }
 
