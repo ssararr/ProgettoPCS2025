@@ -7,7 +7,6 @@
 
 using namespace std;
 
-<<<<<<< Updated upstream
 namespace PolyhedraLibrary
 {
 
@@ -24,6 +23,7 @@ bool ImportCell1Ds(PolyhedraMesh& mesh);
 bool ImportCell2Ds(PolyhedraMesh& mesh);
 
 /* Importa le proprietà delle celle 3D dal file Cell3Ds.csv ritorna il risultato della lettura, true se ha successo, false altrimenti */
+
 
 bool ImportCell3Ds(PolyhedraMesh& mesh);
 
