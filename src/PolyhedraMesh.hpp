@@ -14,7 +14,7 @@ namespace PolyhedraLibrary {
         unsigned int NumCell0Ds;
         unsigned int NumCell1Ds;
         unsigned int NumCell2Ds;
-        //unsigned int NumCell3Ds;
+        unsigned int NumCell3Ds;
 
         // Vettori contenenti Id, ovvero numeri interi
         vector<unsigned int> Cell0DsId;

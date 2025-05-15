@@ -120,3 +120,62 @@ bool ImportCell1Ds(PolyhedraMesh& mesh, string Poliedro) //implemento la funzion
 }
 
 // ***************************************************************************
+
+bool ImportCell3Ds(PolyhedraMesh& mesh, string Poliedro) //implemento la funzione che deve raccogliere i dati relativi agli SPIGOLI
+{
+    ifstream file;
+    file.open("./" << Polidero << "_Cell3Ds.csv"); //apro il file da cui leggiamo i dati
+
+    if(file.fail()) //gestiamo l'apertura del file
+        return false;
+
+    list<string> listLines; //creo una lista di stringhe
+
+    string line;
+    while (getline(file, line)) //leggo il file linea per linea
+        listLines.push_back(line); //aggiungo ogni linea del file come elemento della lista
+
+    file.close(); //chiudo il file
+
+    // rimuovo l'header della lista
+    listLines.pop_front();
+
+    mesh.NumCell3Ds = listLines.size(); //imposto il numero di spigoli uguale alla dimensione della lista 
+
+    if (mesh.NumCell3Ds == 0) //nel caso la dimensione sia nulla gestisco l'errore
+    {
+        cerr << "There is no cell 3D" << endl;
+        return false;
+    }
+
+    // Alloco memoria per gli ID e le coordinate dei punti
+    mesh.Cell3DsId.reserve(mesh.NumCell3Ds); //vettore di dimensione numero di spigoli per salvare gli ID degli spigoli
+    mesh.Cell3dVertices.reserve(mesh.NumCell3Ds); //riservo lo spazio pari al numero totale di poliedri
+    mesh.Cell3dEdges.reserve(mesh.NumCell3Ds); //riservo lo spazio pari al numero totale di poliedri   
+
+    for (const string& line : listLines) //per ogni riga della lista, presa per riferimento 
+    {
+        istringstream converter(line); //oggetto istringstream che mi permette di manipolare le righe di stringhe
+
+        unsigned int id;               
+        unsigned int nVert;
+        unsigned int nEdgs;
+        unsigned int nFacs;
+
+        converter >>  id;                
+        converter >>  nVert;
+        
+        vector<unisgned int> v_vertices;
+        v_vertices.reserve(nVert); //riservo lo spazio per il numero di vertici
+        for (unsigned int i = 0; i < nVert; i++)
+        {
+            unsigned int vertex;
+            converter >> vertex;
+            v_vertices.push_back(vertex); //aggiungo l'id del vertice alla lista di id associata al poliedro
+        }
+        mesh.Cell3D
+        mesh.Cell1DsId.push_back(id); //aggiungo id all'ultima posizione del vettore Cell1DsId
+    }
+
+    return true; //restituisco true se la funzione è andata a buon fine
+}
