@@ -150,8 +150,6 @@ bool ImportCell3Ds(PolyhedraMesh& mesh, string Poliedro) //implemento la funzion
 
     // Alloco memoria per gli ID e le coordinate dei punti
     mesh.Cell3DsId.reserve(mesh.NumCell3Ds); //vettore di dimensione numero di spigoli per salvare gli ID degli spigoli
-    mesh.Cell3dVertices.reserve(mesh.NumCell3Ds); //riservo lo spazio pari al numero totale di poliedri
-    mesh.Cell3dEdges.reserve(mesh.NumCell3Ds); //riservo lo spazio pari al numero totale di poliedri   
 
     for (const string& line : listLines) //per ogni riga della lista, presa per riferimento 
     {
@@ -162,20 +160,37 @@ bool ImportCell3Ds(PolyhedraMesh& mesh, string Poliedro) //implemento la funzion
         unsigned int nEdgs;
         unsigned int nFacs;
 
-        converter >>  id;                
+        converter >>  id;     
+
         converter >>  nVert;
-        
-        vector<unisgned int> v_vertices;
-        v_vertices.reserve(nVert); //riservo lo spazio per il numero di vertici
+        mesh.Cell3dVertices.reserve(nVert); //riservo lo spazio pari al numero totale di poliedri
         for (unsigned int i = 0; i < nVert; i++)
         {
             unsigned int vertex;
             converter >> vertex;
-            v_vertices.push_back(vertex); //aggiungo l'id del vertice alla lista di id associata al poliedro
+            mesh.Cell3dVertices.push_back(vertex); //aggiungo i vertici al vettore di vertici diel poliedro
         }
-        mesh.Cell3D
-        mesh.Cell1DsId.push_back(id); //aggiungo id all'ultima posizione del vettore Cell1DsId
-    }
 
+        converter >>  nEdgs;
+        mesh.Cell3dEdges.reserve(nEdgs); //riservo lo spazio pari al numero totale di poliedri
+        for (unsigned int j = 0; j < nEdgs; j++)
+        {
+            unsigned int edge;
+            converter >> edge;
+            mesh.Cell3dEdges.push_back(edge); //aggiungo gli spigoli al vettore di spigoli del poliedro
+        }
+
+        converter >>  nFacs;
+        mesh.Cell3dFaces.reserve(nFacs); //riservo lo spazio pari al numero totale di poliedri
+        for (unsigned int k = 0; k < nFacs; k++)
+        {
+            unsigned int face;
+            converter >> face;
+            mesh.Cell3dFaces.push_back(face); //aggiungo le facce al vettore di facce del poliedro
+        }
+
+        mesh.Cell3DsId.push_back(id);
+    }
+    
     return true; //restituisco true se la funzione è andata a buon fine
 }
