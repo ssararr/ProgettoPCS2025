@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 //POLYHEDRA UTILS CPP
 #include "Utils.hpp"
 #include <iostream>
@@ -193,4 +194,83 @@ bool ImportCell3Ds(PolyhedraMesh& mesh, string Poliedro) //implemento la funzion
     }
     
     return true; //restituisco true se la funzione è andata a buon fine
+}
+
+
+bool ImportCell2Ds(PolyhedraMesh& mesh, string Poliedro)
+{
+    ifstream file;
+    file.open("./" << Poliedro << "_" << "Cell2Ds.csv");
+
+    if(file.fail())
+        return false;
+
+    list<string> listLines;
+    string line;
+    while (getline(file, line))
+
+        listLines.push_back(line);  // Salva nella lista listlines quello che ha letto in line con getline
+
+    file.close();
+
+    listLines.pop_front();  // Toglie header
+
+    mesh.NumCell2Ds = listLines.size();     // Riempio NumCell2Ds con il numero di celle quindi di facce
+
+    if (mesh.NumCell2Ds == 0)
+    {
+        cerr << "Non esistono celle 2D" << endl;
+        return false;
+    }
+
+    // Riservo spazio in memoria per riempire i vettori grandi tante quante celle
+    mesh.Cell2DsId.reserve(mesh.NumCell2Ds);    
+    mesh.Cell2DsNumVertices.reserve(mesh.NumCell2Ds);
+    mesh.Cell2DsNumEdges.reserve(mesh.NumCell2Ds);
+
+    // Vectors dinamici contenenti i vertices e gli edges 
+    mesh.Cell2DsVertices.reserve(mesh.NumCell2Ds);
+    mesh.Cell2DsEdges.reserve(mesh.NumCell2Ds);
+
+    // Cicla su ogni linea in listlines
+    for (const string& line : listLines)
+    {
+        istringstream converter(line);
+
+        unsigned int id;
+        unsigned int NumVertices;
+        unsigned int NumEdges;
+        double tmp;
+        vector<unsigned int> vertices;
+        vector<unsigned int> edges;
+
+        converter >> id >> NumVertices
+
+        // Ciclo per aggiungere ogni vertice alla lista dei vertici
+        vertices.reserve(NumVertices);  // Il numero di vertici dipende dalla variabile letta dal file
+        for(unsigned int i = 0; i < NumVertices; i++){  // Il ciclo itera in base al numero di vertici riportati nel .csv
+            converter >> tmp;
+            vertices.push_back(tmp);
+        }
+
+        converter >> NumEdges;
+        // Ciclo per aggiungere ogni arco alla lista degli archi
+        edges.reserve(NumEdges);
+        for(unsigned int i = 0; i < NumEdges; i++)
+            {
+            converter >> separator >> tmp;
+            edges.push_back(tmp);}
+
+        // Aggiungo alle liste di id e NumVertices, NumEdges i dati letti
+        mesh.Cell2DsId.push_back(id);
+        mesh.Cell2DNumVertices.push_back(NumVertices);
+        mesh.Cell2DNumEdges.push_back(NumEdges);
+
+        // Aggiungo alle liste contenenti ID di vertici e archi le liste di vertici e archi
+        mesh.Cell2DsVertices.push_back(vertices);
+        mesh.Cell2DsEdges.push_back(edges);
+
+    }
+
+    return true;
 }
