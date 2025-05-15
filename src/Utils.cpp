@@ -22,8 +22,11 @@ bool ImportMesh(PolyhedraMesh& mesh, string Poliedro) //funzione che importa una
     
     if(!ImportCell3Ds(mesh), string Poliedro) //importo la funzione per i dati relativi ai POLIEDRI
         return false;
+}
 
 
+
+// ***************************************************************************
 bool ImportCell0Ds(PolyhedraMesh& mesh, string Poliedro) //funzione per importare i punti 0D
 //la funzione prende in input la mesh e il nome del poliedro
 {
