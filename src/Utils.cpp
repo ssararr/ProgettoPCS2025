@@ -116,4 +116,7 @@ bool ImportCell1Ds(PolyhedraMesh& mesh, string Poliedro) //implemento la funzion
         mesh.Cell1DsId.push_back(id); //aggiungo id all'ultima posizione del vettore Cell1DsId
     }
 
+    return true; //restituisco true se la funzione è andata a buon fine
+}
+
 // ***************************************************************************
