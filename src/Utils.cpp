@@ -198,7 +198,6 @@ bool ImportCell2Ds(PolyhedraMesh& mesh, string Poliedro)
     return true;
 }
 
-
 // ***************************************************************************
 bool ImportCell3Ds(PolyhedraMesh& mesh, string Poliedro) //implemento la funzione che deve raccogliere i dati relativi agli SPIGOLI
 {
@@ -276,5 +275,3 @@ bool ImportCell3Ds(PolyhedraMesh& mesh, string Poliedro) //implemento la funzion
     
     return true; //restituisco true se la funzione è andata a buon fine
 }
-
-
