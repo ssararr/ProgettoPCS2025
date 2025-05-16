@@ -28,3 +28,23 @@ bool ImportCell2Ds(PolyhedraMesh& mesh);
 bool ImportCell3Ds(PolyhedraMesh& mesh);
 
 }
+
+#include <iostream>
+#include "PolyhedraMesh.hpp"
+
+using namespace std;
+
+namespace PolyhedraLibrary
+{
+
+bool ImportMesh(PolyhedraMesh& mesh);
+
+bool ImportCell0Ds(PolyhedraMesh& mesh);
+
+bool ImportCell1Ds(PolyhedraMesh& mesh);
+
+bool ImportCell2Ds(PolyhedraMesh& mesh);
+
+bool ImportCell3Ds(PolyhedraMesh& mesh);
+
+}
