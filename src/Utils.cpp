@@ -56,7 +56,7 @@ bool ImportCell0Ds(PolyhedraMesh& mesh, string Poliedro) //funzione per importar
 
     mesh.Cell0DsId.reserve(mesh.NumCell0Ds); //riservo spazio per gli Id, cioè riservo spazio per il numero di vertici (punti 0D)
 
-    mesh.Cell0DsCoordinates = Eigen::MatrixXd::Zero(4, mesh.NumCell0Ds); //riservo spazio per le coordinate x,y,z in una matrice 4xvertici
+    mesh.Cell0DsCoordinates = Eigen::MatrixXd::Zero(3, mesh.NumCell0Ds); //riservo spazio per le coordinate x,y,z in una matrice 4xvertici
 
     for (const string& line : listLines) //per ogni riga della lista, passata per riferimento
     {
@@ -101,7 +101,7 @@ bool ImportCell1Ds(PolyhedraMesh& mesh, string Poliedro) //implemento la funzion
 
     // Alloco memoria per gli ID e le coordinate dei punti
     mesh.Cell1DsId.reserve(mesh.NumCell1Ds); //vettore di dimensione numero di spigoli per salvare gli ID degli spigoli 
-    mesh.Cell1DsExtrema = Eigen::MatrixXi(2, mesh.NumCell1Ds); //matrice di dimensione 2x numero di spigoli per salvare gli estremi 
+    mesh.Cell1DsExtrema = Eigen::MatrixXi(2, mesh.NumCell1Ds); //matrice di dimensione 2 x numero di spigoli per salvare gli estremi 
 
     for (const string& line : listLines) //per ogni riga della lista, presa per riferimento 
     {

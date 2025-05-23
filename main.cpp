@@ -60,6 +60,9 @@ string ClassificaPoliedro(unsigned int& p, unsigned int& q, bool& duale){
 }
 
 
+
+
+
 int main(int argc, char *argv[]){
     
     // Salvo l'input nelle variabili p, q, b, c
