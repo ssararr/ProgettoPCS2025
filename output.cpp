@@ -1,8 +1,13 @@
+#include <iostream>
 #include <fstream>
 #include <iomanip> // per setprecision
-//#include "Eigen/Eigen"
+#include "Eigen/Eigen"
+using namespace Eigen;
+using namespace PolyhedraLibrary;
+#include "PolyhedraMesh.hpp"
 
 using namespace std;
+using namespace Eigen;
 
 // !! nel main: 
 // PolyhedraMesh triangolata = TriangolazioneI(PolyhedraMesh& mesh, unsigned int b) funzione per triangolare
