@@ -36,9 +36,7 @@ namespace PolyhedraLibrary {
 
         // Salviamo gli ID dei vertici, dei lati costituenti le facce
         vector<vector<unsigned int>> Cell2DsVertices; 
-        vector<vector<unsigned int>> Cell2DsEdges;
-        vector<unsigned int> Cell2DsNumVertices; //Salvo il numero di vertici di ogni faccia (poligono)
-        vector<unsigned int> Cell2DsNumEdges; //Salvo il numero di spigoli di ogni faccia (poligono)
+        vector<vector<unsigned int>> Cell2DsEdges;       
 
               
         // Vettori contenenti ID dei vertici, archi e facce del poliedro
