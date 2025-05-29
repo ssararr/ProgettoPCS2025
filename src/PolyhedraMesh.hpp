@@ -38,6 +38,7 @@ namespace PolyhedraLibrary {
         vector<vector<unsigned int>> Cell2DsVertices; 
         vector<vector<unsigned int>> Cell2DsEdges;       
 
+
               
         // Vettori contenenti ID dei vertici, archi e facce del poliedro
         vector<unsigned int> Cell3DsEdges;
