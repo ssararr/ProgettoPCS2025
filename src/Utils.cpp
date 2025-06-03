@@ -182,7 +182,11 @@ bool ImportCell2Ds(PolyhedraMesh& mesh, string Poliedro)
         for(unsigned int i = 0; i < NumEdges; i++)
             {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
             converter >> tmp;
+=======
+            converter >> separator >> tmp;
+>>>>>>> Stashed changes
 =======
             converter >> separator >> tmp;
 >>>>>>> Stashed changes
@@ -202,6 +206,7 @@ bool ImportCell2Ds(PolyhedraMesh& mesh, string Poliedro)
     return true;
 }
 
+<<<<<<< Updated upstream
 // ***************************************************************************
 bool ImportCell3Ds(PolyhedraMesh& mesh, string Poliedro) //implemento la funzione che deve raccogliere i dati relativi agli SPIGOLI
 {
@@ -281,3 +286,5 @@ bool ImportCell3Ds(PolyhedraMesh& mesh, string Poliedro) //implemento la funzion
 }
 
 }
+=======
+>>>>>>> Stashed changes

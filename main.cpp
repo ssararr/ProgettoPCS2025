@@ -109,7 +109,7 @@ int main(int argc, char *argv[]){
         cout << "I dati non sono validi per una triangolazione" << endl;
     }
 
-    // duale
+    // Duale
     if(duale){
         MeshDuale(mesh);
         if(Poliedro == "Ottaedro"){
