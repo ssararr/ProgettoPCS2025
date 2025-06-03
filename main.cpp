@@ -3,13 +3,13 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-// #include "PolyhedraMesh.hpp"
-// #include "Utils.hpp"
+#include "PolyhedraMesh.hpp"
+#include "Utils.hpp"
 // #include "UCDUtilities.hpp"
 
 using namespace std;
 //using namespace Eigen;
-//using namespace PolyhedraLibrary;
+using namespace PolyhedraLibrary;
 
 
 // La funzione prende la coppia {p, q} e una variabile booleana che serve
@@ -58,9 +58,6 @@ string ClassificaPoliedro(unsigned int& p, unsigned int& q, bool& duale){
         return "Errore";
     }
 }
-
-
-
 
 
 int main(int argc, char *argv[]){

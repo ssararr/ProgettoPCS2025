@@ -181,7 +181,11 @@ bool ImportCell2Ds(PolyhedraMesh& mesh, string Poliedro)
         edges.reserve(NumEdges);
         for(unsigned int i = 0; i < NumEdges; i++)
             {
+<<<<<<< Updated upstream
             converter >> tmp;
+=======
+            converter >> separator >> tmp;
+>>>>>>> Stashed changes
             edges.push_back(tmp);}
 
         // Aggiungo alle liste di id e NumVertices, NumEdges i dati letti
