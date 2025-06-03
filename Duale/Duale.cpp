@@ -146,9 +146,9 @@ bool MeshDuale(PolyhedraMesh& mesh)
 	
 	MatrixXi NewCell1DsExtrema(2, dualEdges.size()); // Inizializzo la matrice degli estremi degli spigoli duali
 	vector<unsigned int> NewCell1DsId(dualEdges.size()); // Vettore per gli ID degli spigoli duali
-	for (unsigned int i = 0; i < dualEdges.size(); ++i)
+	for (unsigned int i = 0; i < edgeToFaces.size(); ++i)
 	{
-		const auto& edge = dualEdges[i]; // Prendo la coppia di facce che condividono lo spigolo
+		const auto& edge = edgeToFaces[i]; // Prendo la coppia di facce che condividono lo spigolo
 		NewCell1DsExtrema(0, i) = edge.first; // Assegno il primo ID della coppia come primo estremo dello spigolo duale
 		NewCell1DsExtrema(1, i) = edge.second; // Assegno il secondo ID della coppia come secondo estremo dello spigolo duale
 		NewCell1DsId.push_back(i); // Aggiungo l'ID dello spigolo duale
@@ -174,9 +174,9 @@ bool MeshDuale(PolyhedraMesh& mesh)
 
 	vector<vector<double>> NewCell2DsEdges; 
 	NewCell2DsEdges.reserve(mappaVertexToDual.size()); // Riservo spazio per gli ID degli spigoli duali per ogni faccia duale
-	for (unsigned int i = 0; i < dualEdges.size(); ++i) //ogni i è un edge duale
+	for (unsigned int i = 0; i < edgeToFaces.size(); ++i) //ogni i è un edge duale
 	{
-		const auto& edge = dualEdges[i]; // Prendo la coppia di facce che condividono lo spigolo
+		const auto& edge = edgeToFaces[i]; // Prendo la coppia di facce che condividono lo spigolo
 		
 		for (unsigned int j = 0; j < mappaVertexToDual.size(), j++) //ogni j è una faccia duale
 		{
@@ -198,10 +198,10 @@ bool MeshDuale(PolyhedraMesh& mesh)
 	mesh.Cell0DsCoordinates = NewCell0DsCoordinates; // Assegno le coordinate dei vertici duali alla matrice delle coordinate dei vertici del poliedro duale
 
 	//RIEMPIO CELL1
-	mesh.NumCell1Ds = dualEdges.size(); // Imposto il numero di celle 1D (spigoli duali) uguale al numero di spigoli duali
-	mesh.Cell1DsId.resize(dualEdges.size()); // Riservo spazio per gli ID degli spigoli duali
+	mesh.NumCell1Ds = edgeToFaces.size(); // Imposto il numero di celle 1D (spigoli duali) uguale al numero di spigoli duali
+	mesh.Cell1DsId.resize(edgeToFaces.size()); // Riservo spazio per gli ID degli spigoli duali
 	mesh.Cell1DsId = NewCell1DsId; // Assegno gli ID degli spigoli duali al vettore degli ID degli spigoli del poliedro duale
-	mesh.Cell1DsExtrema.resize(2, dualEdges.size()); // Inizializzo la matrice degli estremi degli spigoli duali
+	mesh.Cell1DsExtrema.resize(2, edgeToFaces.size()); // Inizializzo la matrice degli estremi degli spigoli duali
 	mesh.Cell1DsExtrema = NewCell1DsExtrema; // Assegno gli estremi degli spigoli duali alla matrice degli estremi degli spigoli del poliedro duale
 
 	//RIEMPIO CELL2
@@ -223,11 +223,11 @@ bool MeshDuale(PolyhedraMesh& mesh)
 	
 	//SENZA TRIANGOLAZIONE VALGONO LE RIGHE SEGUENTI
 	mesh.Cell3DsNumVertices = NumFaces; // Il numero di vertici del poliedro duale è uguale al numero di facce del poliedro originale
-	mesh.Cell3DsNumEdges = dualEdges.size(); // Il numero di spigoli del poliedro duale è uguale al numero di spigoli duali
+	mesh.Cell3DsNumEdges = edgeToFaces.size(); // Il numero di spigoli del poliedro duale è uguale al numero di spigoli duali
 	mesh.Cell3DsNumFaces = mappaVertexToDual.size(); // Il numero di facce del poliedro duale è uguale al numero di vertici originali
 	mesh.Cell3DsVertices.resize(NumFaces); // Riservo spazio per gli ID dei vertici del poliedro duale
 	mesh.Cell3DsVertices = NewCell0DsId; // Assegno gli ID dei vertici del poliedro duale
-	mesh.Cell3DsEdges.resize(dualEdges.size()); // Riservo spazio per gli ID degli spigoli del poliedro duale
+	mesh.Cell3DsEdges.resize(edgeToFaces.size()); // Riservo spazio per gli ID degli spigoli del poliedro duale
 	mesh.Cell3DsEdges = NewCell1DsId; // Assegno gli ID degli spigoli del poliedro duale
 	mesh.Cell3DsFaces.resize(mappaVertexToDual.size()); // Riservo spazio per gli ID delle facce del poliedro duale
 	mesh.Cell3DsFaces = NewCell2DsId; // Assegno gli ID delle facce del poliedro duale
