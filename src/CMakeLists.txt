@@ -1,10 +1,10 @@
 # Headers
 list(APPEND src_headers
+    ${CMAKE_CURRENT_SOURCE_DIR}/PolyhedraMesh.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Utils.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Duale.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/triangolazione.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/output.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/PolyhedraMesh.hpp
 )
 
 # Sources
