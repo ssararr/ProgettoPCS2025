@@ -70,10 +70,8 @@ int main(int argc, char *argv[]){
         for(unsigned int i = 1; i < argc; i++){
 
             istringstream convert(argv[i]);
-            convert >> arr[i-1]; // converto l'argomento (una stringa) in un intero
-        
-        }
-        
+            convert >> arr[i-1]; // converto l'argomento (una stringa) in un intero     
+        }    
     }
 
     unsigned int p = arr[0];
@@ -85,14 +83,42 @@ int main(int argc, char *argv[]){
 
     cout << "Poliedro: " << Poliedro << "\nDuale: " << duale << endl;
 
-
     PolyhedraMesh mesh;
 
     if(!ImportMesh(mesh, Poliedro)){
-        
         cerr << "La mesh non viene riempita correttamente" << endl;
-
     }
+
+    // Triangolazione del poliedro
+    if (b>0 && c==0) {
+        TriangolazioneI(mesh, b);
+        cout << "Triangolazione di tipo I del " << Poliedro << "eseguita con b = " << b << endl;
+        
+    }
+    else if (b==0 && c>0) {
+        TriangolazioneI(mesh, c);
+        cout << "Triangolazione di tipo I del " << Poliedro << "eseguita con c = " << c << endl;
+    }
+    else if (b>0 && c==b) {
+        cout << "Triangolazione di tipo II del " << Poliedro << "eseguita con b = " << b << " e c = " << c << endl;
+    }
+    else{
+        cout << "I dati non sono validi per una triangolazione" << endl;
+    }
+
+    // duale
+    if(duale){
+        MeshDuale(mesh);
+        if(Poliedro == "Ottaedro"){
+            Poliedro = "Cubo";
+        }
+        else if(Poliedro == "Icosaedro"){
+            Poliedro = "Dodecaedro";
+        }
+        cout << "Mesh duale del " << Poliedro << " creata." << endl;
+    }
+
+    outputFile(mesh, "Cell0Ds.txt", "Cell1Ds.txt", "Cell2Ds.txt", "Cell3Ds.txt"); 
 
 
 }
