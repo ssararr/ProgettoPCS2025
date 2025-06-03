@@ -6,6 +6,7 @@
 
 using namespace std;
 using namespace Eigen;
+using namespace PolyhedraLibrary;
 
 bool outputFile(
     const PolyhedraMesh& triangolata,

@@ -1,4 +1,5 @@
 //POLYHEDRA UTILS CPP
+#include "PolyhedraMesh.hpp"
 #include "Utils.hpp"
 #include <iostream>
 #include <fstream> //libreria per la gestione dei file
@@ -11,16 +12,16 @@ namespace PolyhedraLibrary
 bool ImportMesh(PolyhedraMesh& mesh, string Poliedro) //funzione che importa una mesh poligonale. se ci sono errori e una funzione fallisce viene restituito false
 {
 
-    if(!ImportCell0Ds(mesh), string Poliedro) //importo la funzione per i dati relativi ai PUNTI 
+    if(!ImportCell0Ds(mesh, Poliedro)) //importo la funzione per i dati relativi ai PUNTI 
         return false;
 
-    if(!ImportCell1Ds(mesh), string Poliedro) //importo la funzione per i dati relativi agli SPIGOLI
+    if(!ImportCell1Ds(mesh, Poliedro)) //importo la funzione per i dati relativi agli SPIGOLI
         return false;
 
-    if(!ImportCell2Ds(mesh), string Poliedro) //importo la funzione per i dati relativi ai POLIGONI
+    if(!ImportCell2Ds(mesh, Poliedro)) //importo la funzione per i dati relativi ai POLIGONI
         return false;
     
-    if(!ImportCell3Ds(mesh), string Poliedro) //importo la funzione per i dati relativi ai POLIEDRI
+    if(!ImportCell3Ds(mesh, Poliedro)) //importo la funzione per i dati relativi ai POLIEDRI
         return false;
 }
 
@@ -31,7 +32,7 @@ bool ImportCell0Ds(PolyhedraMesh& mesh, string Poliedro) //funzione per importar
 //la funzione prende in input la mesh e il nome del poliedro
 {
     ifstream file;
-    file.open("./" << Poliedro << "_Cell0Ds.csv"); //apro il file
+    file.open("./" + Poliedro + "_Cell0Ds.csv"); //apro il file
 
     if(file.fail()) //controllo se il file è aperto
         return false;
@@ -75,7 +76,7 @@ bool ImportCell0Ds(PolyhedraMesh& mesh, string Poliedro) //funzione per importar
 bool ImportCell1Ds(PolyhedraMesh& mesh, string Poliedro) //implemento la funzione che deve raccogliere i dati relativi agli SPIGOLI
 {
     ifstream file;
-    file.open("./" << Polidero << "_Cell1Ds.csv"); //apro il file da cui leggiamo i dati
+    file.open("./" + Poliedro + "_Cell1Ds.csv"); //apro il file da cui leggiamo i dati
 
     if(file.fail()) //gestiamo l'apertura del file
         return false;
@@ -123,7 +124,7 @@ bool ImportCell1Ds(PolyhedraMesh& mesh, string Poliedro) //implemento la funzion
 bool ImportCell2Ds(PolyhedraMesh& mesh, string Poliedro)
 {
     ifstream file;
-    file.open("./" << Poliedro << "_" << "Cell2Ds.csv");
+    file.open("./" + Poliedro + "_" + "Cell2Ds.csv");
 
     if(file.fail())
         return false;
@@ -167,7 +168,7 @@ bool ImportCell2Ds(PolyhedraMesh& mesh, string Poliedro)
         vector<unsigned int> vertices;
         vector<unsigned int> edges;
 
-        converter >> id >> NumVertices
+        converter >> id >> NumVertices;
 
         // Ciclo per aggiungere ogni vertice alla lista dei vertici
         vertices.reserve(NumVertices);  // Il numero di vertici dipende dalla variabile letta dal file
@@ -179,23 +180,16 @@ bool ImportCell2Ds(PolyhedraMesh& mesh, string Poliedro)
         converter >> NumEdges;
         // Ciclo per aggiungere ogni arco alla lista degli archi
         edges.reserve(NumEdges);
-        for(unsigned int i = 0; i < NumEdges; i++)
-            {
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
+        for(unsigned int i = 0; i < NumEdges; i++){
             converter >> tmp;
-=======
-            converter >> separator >> tmp;
->>>>>>> Stashed changes
-=======
-            converter >> separator >> tmp;
->>>>>>> Stashed changes
-            edges.push_back(tmp);}
+
+            edges.push_back(tmp);
+        }
 
         // Aggiungo alle liste di id e NumVertices, NumEdges i dati letti
         mesh.Cell2DsId.push_back(id);
-        mesh.Cell2DNumVertices.push_back(NumVertices);
-        mesh.Cell2DNumEdges.push_back(NumEdges);
+        mesh.Cell2DsNumVertices.push_back(NumVertices);
+        mesh.Cell2DsNumEdges.push_back(NumEdges);
 
         // Aggiungo alle liste contenenti ID di vertici e archi le liste di vertici e archi
         mesh.Cell2DsVertices.push_back(vertices);
@@ -206,12 +200,11 @@ bool ImportCell2Ds(PolyhedraMesh& mesh, string Poliedro)
     return true;
 }
 
-<<<<<<< Updated upstream
 // ***************************************************************************
 bool ImportCell3Ds(PolyhedraMesh& mesh, string Poliedro) //implemento la funzione che deve raccogliere i dati relativi agli SPIGOLI
 {
     ifstream file;
-    file.open("./" << Polidero << "_Cell3Ds.csv"); //apro il file da cui leggiamo i dati
+    file.open("./" + Poliedro + "_Cell3Ds.csv"); //apro il file da cui leggiamo i dati
 
     if(file.fail()) //gestiamo l'apertura del file
         return false;
@@ -235,8 +228,6 @@ bool ImportCell3Ds(PolyhedraMesh& mesh, string Poliedro) //implemento la funzion
         return false;
     }
 
-    // Alloco memoria per gli ID e le coordinate dei punti
-    mesh.Cell3DsId.reserve(mesh.NumCell3Ds); //vettore di dimensione numero di spigoli per salvare gli ID degli spigoli
 
     for (const string& line : listLines) //per ogni riga della lista, presa per riferimento 
     {
@@ -250,33 +241,33 @@ bool ImportCell3Ds(PolyhedraMesh& mesh, string Poliedro) //implemento la funzion
         converter >>  id;     
 
         converter >>  NumVertices;
-        mesh.Cell3dVertices.reserve(NumVertices); //riservo lo spazio pari al numero totale di poliedri
+        mesh.Cell3DsVertices.reserve(NumVertices); //riservo lo spazio pari al numero totale di poliedri
         for (unsigned int i = 0; i < NumVertices; i++)
         {
             unsigned int vertex;
             converter >> vertex;
-            mesh.Cell3dVertices.push_back(vertex); //aggiungo i vertici al vettore di vertici diel poliedro
+            mesh.Cell3DsVertices.push_back(vertex); //aggiungo i vertici al vettore di vertici diel poliedro
         }
 
         converter >>  NumEdges;
-        mesh.Cell3dEdges.reserve(NumEdges); //riservo lo spazio pari al numero totale di poliedri
+        mesh.Cell3DsEdges.reserve(NumEdges); //riservo lo spazio pari al numero totale di poliedri
         for (unsigned int j = 0; j < NumEdges; j++)
         {
             unsigned int edge;
             converter >> edge;
-            mesh.Cell3dEdges.push_back(edge); //aggiungo gli spigoli al vettore di spigoli del poliedro
+            mesh.Cell3DsEdges.push_back(edge); //aggiungo gli spigoli al vettore di spigoli del poliedro
         }
 
         converter >>  NumFaces;
-        mesh.Cell3dFaces.reserve(NumFaces); //riservo lo spazio pari al numero totale di poliedri
+        mesh.Cell3DsFaces.reserve(NumFaces); //riservo lo spazio pari al numero totale di poliedri
         for (unsigned int k = 0; k < NumFaces; k++)
         {
             unsigned int face;
             converter >> face;
-            mesh.Cell3dFaces.push_back(face); //aggiungo le facce al vettore di facce del poliedro
+            mesh.Cell3DsFaces.push_back(face); //aggiungo le facce al vettore di facce del poliedro
         }
 
-        mesh.Cell3DsId.push_back(id);
+        mesh.Cell3DsId = id;
         mesh.Cell3DsNumVertices = NumVertices;
         mesh.Cell3DsNumEdges = NumEdges;
         mesh.Cell3DsNumFaces = NumFaces;
@@ -286,5 +277,3 @@ bool ImportCell3Ds(PolyhedraMesh& mesh, string Poliedro) //implemento la funzion
 }
 
 }
-=======
->>>>>>> Stashed changes

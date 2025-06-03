@@ -66,21 +66,22 @@ string ClassificaPoliedro(unsigned int& p, unsigned int& q, bool& duale){
 int main(int argc, char *argv[]){
     
     // Salvo l'input nelle variabili p, q, b, c
-    unsigned int arr[argc-1] = {};
+    vector<unsigned int> vec;
+    vec.reserve(argc-1);
     bool duale  = false;
     if(argc > 1)
     {
-        for(unsigned int i = 1; i < argc; i++){
+        for(int i = 1; i < argc; i++){
 
             istringstream convert(argv[i]);
-            convert >> arr[i-1]; // converto l'argomento (una stringa) in un intero     
+            convert >> vec[i-1]; // converto l'argomento (una stringa) in un intero     
         }    
     }
 
-    unsigned int p = arr[0];
-    unsigned int q = arr[1];
-    unsigned int b = arr[2];
-    unsigned int c = arr[3];
+    unsigned int p = vec[0];
+    unsigned int q = vec[1];
+    unsigned int b = vec[2];
+    unsigned int c = vec[3];
 
     string Poliedro = ClassificaPoliedro(p, q, duale);
 
