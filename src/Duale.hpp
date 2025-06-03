@@ -12,7 +12,7 @@ double distanceBtw(const vector<double>& point1, const vector<double>& point2); 
 
 vector<vector<double>> eigenMatrixToVectorVector(const MatrixXd& matrix); //funzione che converte un oggetto MatrixXd in un vettore di vettori di double
 
-map<int, vector<int>> findClosestDualVertices(       //funzione che, dati due vector vector contenenti le coordinate dei vertici originali e dei vertici duali, restituisce una mappa in cui associa ad ogni id di un vertice originale gli id dei vertici duali pi� vicini
+map<int, vector<unsigned int>> findClosestDualVertices(       //funzione che, dati due vector vector contenenti le coordinate dei vertici originali e dei vertici duali, restituisce una mappa in cui associa ad ogni id di un vertice originale gli id dei vertici duali pi� vicini
 	const vector<vector<double>>& originalVertices,
 	const vector<vector<double>>& dualVertices,
 	double tolerance = 1e-6
