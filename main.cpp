@@ -5,6 +5,9 @@
 #include <string>
 #include "PolyhedraMesh.hpp"
 #include "Utils.hpp"
+#include "triangolazione.hpp"
+#include "Duale.hpp"
+#include "output.hpp"
 // #include "UCDUtilities.hpp"
 
 using namespace std;
