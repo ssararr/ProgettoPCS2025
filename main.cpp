@@ -11,7 +11,7 @@
 // #include "UCDUtilities.hpp"
 
 using namespace std;
-//using namespace Eigen;
+using namespace Eigen;
 using namespace PolyhedraLibrary;
 
 
