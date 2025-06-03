@@ -14,15 +14,15 @@ using namespace Eigen;
 // outputFile0(triangolata, "Cell0Ds.txt") !!
 
 // Output: funzione che stampi in output Cell0Ds.txt  
-bool outputFile0(const PolyhedraMesh& triangolata, const string& outputFile0) 
+bool outputFile(const PolyhedraMesh& triangolata, const string& OutputFile0, const string& OutputFile1, const string& OutputFile2, const string& OutputFile3) 
 //passo la nuova mesh, generata con PolyhedraMesh triangolata = TriangolazioneI(PolyhedraMesh& mesh, unsigned int b) per riferimento costante, tanto non devo modificarla
 //e passo il nome del file di output come stringa, così da poterlo cambiare facilmente
 {
-    // file di output
+    // file di output0
     ofstream Cell0Ds;
     
     // Apro i file di output
-    Cell0Ds.open(outputFile0);
+    Cell0Ds.open(OutputFile0);
     
     // Controllo se i file sono stati aperti correttamente
     if (!Cell0Ds.is_open())
@@ -55,15 +55,8 @@ bool outputFile0(const PolyhedraMesh& triangolata, const string& outputFile0)
     // Chiudo il file
     Cell0Ds.close();
 
-    return true;
-}
 
-
-// ***************************************************************************
-// OutputFile1: funzione che stampi in output Cell1Ds.txt  
-bool outputFile1(const PolyhedraMesh& triangolata, const string& OutputFile1) 
-{
-    // file di output
+    // file di output1
     ofstream Cell1Ds;
     
     // Apro i file di output
@@ -97,15 +90,8 @@ bool outputFile1(const PolyhedraMesh& triangolata, const string& OutputFile1)
     // Chiudo il file
     Cell1Ds.close();
 
-    return true;
-}
 
-
-// ***************************************************************************
-// OutputFile2: funzione che stampi in output Cell2Ds.txt  
-bool outputFile2(const PolyhedraMesh& triangolata, const string& OutputFile2) 
-{
-    // file di output
+    // file di output2
     ofstream Cell2Ds;
     
     // Apro i file di output
@@ -150,15 +136,8 @@ bool outputFile2(const PolyhedraMesh& triangolata, const string& OutputFile2)
     // Chiudo il file
     Cell2Ds.close();
 
-    return true;
-}
 
-
-// ***************************************************************************
-// OutputFile3: funzione che stampi in output Cell3Ds.txt  
-bool outputFile3(const PolyhedraMesh& triangolata, const string& OutputFile3) 
-{
-    // file di output
+    // file di output3
     ofstream Cell3Ds;
     
     // Apro i file di output
@@ -203,7 +182,6 @@ bool outputFile3(const PolyhedraMesh& triangolata, const string& OutputFile3)
 
     return true;
 }
-
 
 
 
