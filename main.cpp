@@ -86,9 +86,13 @@ int main(int argc, char *argv[]){
     cout << "Poliedro: " << Poliedro << "\nDuale: " << duale << endl;
 
 
+    PolyhedraMesh mesh;
 
-    // Identifico il poliedro
+    if(!ImportMesh(mesh, Poliedro)){
+        
+        cerr << "La mesh non viene riempita correttamente" << endl;
 
+    }
 
 
 }

@@ -7,8 +7,8 @@ using namespace std;
 using namespace Eigen;
 using namespace PolyhedraLibrary;
 #include "PolyhedraMesh.hpp"
-// #include "Utils.hpp"
-// #include "UCDUtilities.hpp"
+#include "Utils.hpp"
+#include "UCDUtilities.hpp"
 
 
 // Funzione di triangolazione del poliedro tipo I
@@ -23,6 +23,7 @@ PolyhedraMesh TriangolazioneI(PolyhedraMesh& mesh, unsigned int b)
     unsigned int NewNumVertices = (b + 1) * (b + 2) / 2; // numero di vertici
     unsigned int NewNumEdges = 3 * b * (b + 1) / 2; // numero di edges
     double b1 = b;  // Necessario perché, quando si fa i/b avrei divisione intera mentre mi serve che i/b sia un double
+    double tol = 1e-6;
 
     MatrixXd NewCell0DsCoordinates = MatrixXd::Zero(3, NewNumVertices); 
     MatrixXi NewCell1DsExtrema = MatrixXi::Zero(2, NewNumEdges);
@@ -48,7 +49,7 @@ PolyhedraMesh TriangolazioneI(PolyhedraMesh& mesh, unsigned int b)
     vector<unsigned int> NewCell3DsEdges;
     
     // Ciclo per ogni terna di vertici (faccia) all'interno della lista delle facce descritte da vertici (Cell2DsVertices)
-    for(const auto& faccia : mesh.Cell2DsVerticess){
+    for(const auto& faccia : mesh.Cell2DsVertices){
 
         MatrixXi MatriceTriangolazione = MatrixXi::Zero(b+1, b+1) -1; 
 
@@ -57,7 +58,6 @@ PolyhedraMesh TriangolazioneI(PolyhedraMesh& mesh, unsigned int b)
             for (unsigned int j = 0; j <= b - i; j++){
                 
                 unsigned int k = b - i - j;
-                double alpha = 
 
                 // Costruisco le coordinate x, y, z usando le coordinate baricentriche discretizzate
                 double x = i/b1 * mesh.Cell0DsCoordinates(0, faccia[0]) + j/b1 * mesh.Cell0DsCoordinates(0, faccia[1]) + k/b1 * mesh.Cell0DsCoordinates(0, faccia[2]);
@@ -68,7 +68,7 @@ PolyhedraMesh TriangolazioneI(PolyhedraMesh& mesh, unsigned int b)
 
                 // Controllo se il punto esiste già, ovvero se è già nella matrice delle coordinate riempita fino ad ora
                 for(unsigned int n = 0; n < currentpoint; n++){
-                    if(NewCell0DsCoordinates(0, n) == x && NewCell0DsCoordinates(1, n) == y && NewCell0DsCoordinates(2, n) == z){
+                    if(abs(NewCell0DsCoordinates(0, n)-x) <= tol && abs(NewCell0DsCoordinates(1, n) - y) <= tol && abs(NewCell0DsCoordinates(2, n) - z) <= tol){
                         Nuovo = false;
                         Id = n;
                         break;  // Importante: quando trovo il punto duplicato evito di continuare a ciclare!
