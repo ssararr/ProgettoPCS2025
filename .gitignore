@@ -1,3 +1,5 @@
 Debug
 Release
 .DS_Store
+.vs
+a.out
