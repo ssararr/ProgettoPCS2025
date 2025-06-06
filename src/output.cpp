@@ -123,12 +123,12 @@ bool outputFile(const PolyhedraMesh& triangolata, const string& OutputFile0, con
     for (unsigned int i=0; i<triangolata.NumCell2Ds; i++) //n righe
     {
         Cell2Ds << triangolata.Cell2DsId[i] << " " //ID della faccia
-                << triangolata.Cell2DsNumVertices(i) << " "; //numero di vertici della faccia (sempre 3)
+                << triangolata.Cell2DsNumVertices[i] << " "; //numero di vertici della faccia (sempre 3)
 
         //for (auto vert in triangolata.Cell2DsVertices[i], vert < triangolata.NumCell2Ds, i++) 
         for (auto vert : triangolata.Cell2DsVertices[i]) 
             Cell2Ds << vert << " "; //scrivo gli ID dei vertici della faccia, che sono un vettore di ID       
-        Cell2Ds << triangolata.Cell2DsNumEdges(i) << " "; //numero di edges della faccia (sempre 3)
+        Cell2Ds << triangolata.Cell2DsNumEdges[i] << " "; //numero di edges della faccia (sempre 3)
         for (auto edg : triangolata.Cell2DsEdges[i]) //ID degli edges della faccia 
             Cell2Ds << edg << " "; 
         Cell2Ds << endl;
