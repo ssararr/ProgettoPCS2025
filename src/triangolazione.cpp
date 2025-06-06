@@ -19,10 +19,12 @@ using namespace PolyhedraLibrary;
 // i nuovi lati sono 3b(b+1)/2
 // le nuove facce sono b^2
 
+namespace PolyhedraLibrary{
+
 PolyhedraMesh TriangolazioneI(PolyhedraMesh& mesh, unsigned int b)
 {
-    unsigned int NewNumVertices = (b + 1) * (b + 2) / 2; // numero di vertici
-    unsigned int NewNumEdges = 3 * b * (b + 1) / 2; // numero di edges
+    unsigned int NewNumVertices = 10*b*b + 2; // numero di vertici DI TUTTO IL POLIEDRO (formula solo per Icosaedro, sto testando)
+    unsigned int NewNumEdges = 30*b*b; // numero di edges DI TUTTO IL POLIEDRO
     double b1 = b;  // Necessario perché, quando si fa i/b avrei divisione intera mentre mi serve che i/b sia un double
     double tol = 1e-6;
 
@@ -59,12 +61,27 @@ PolyhedraMesh TriangolazioneI(PolyhedraMesh& mesh, unsigned int b)
         for (unsigned int i = 0; i <= b; i++){
             for (unsigned int j = 0; j <= b - i; j++){
                 
-                unsigned int k = b - i - j;
+                double alpha = i/b1;
+                double beta = j/b1;
+                double gamma = (b - i - j)/b1;
+
+                double x_A = mesh.Cell0DsCoordinates(0, faccia[0]);
+                double y_A = mesh.Cell0DsCoordinates(1, faccia[0]);
+                double z_A = mesh.Cell0DsCoordinates(2, faccia[0]);
+
+                double x_B = mesh.Cell0DsCoordinates(0, faccia[1]);
+                double y_B = mesh.Cell0DsCoordinates(1, faccia[1]);
+                double z_B = mesh.Cell0DsCoordinates(2, faccia[1]);
+
+                double x_C = mesh.Cell0DsCoordinates(0, faccia[2]);
+                double y_C = mesh.Cell0DsCoordinates(1, faccia[2]);
+                double z_C = mesh.Cell0DsCoordinates(2, faccia[2]);
+
 
                 // Costruisco le coordinate x, y, z usando le coordinate baricentriche discretizzate
-                double x = i/b1 * mesh.Cell0DsCoordinates(0, faccia[0]) + j/b1 * mesh.Cell0DsCoordinates(0, faccia[1]) + k/b1 * mesh.Cell0DsCoordinates(0, faccia[2]);
-                double y = i/b1 * mesh.Cell0DsCoordinates(1, faccia[0]) + j/b1 * mesh.Cell0DsCoordinates(1, faccia[1]) + k/b1 * mesh.Cell0DsCoordinates(1, faccia[2]);
-                double z = i/b1 * mesh.Cell0DsCoordinates(2, faccia[0]) + j/b1 * mesh.Cell0DsCoordinates(2, faccia[1]) + k/b1 * mesh.Cell0DsCoordinates(2, faccia[2]);
+                double x = alpha * x_A + beta * x_B + gamma * x_C;
+                double y = alpha * y_A + beta * y_B + gamma * y_C;
+                double z = alpha * z_A + beta * z_B + gamma * z_C;
                 
                 Nuovo = true;
 
@@ -243,4 +260,5 @@ PolyhedraMesh TriangolazioneI(PolyhedraMesh& mesh, unsigned int b)
     mesh.Cell3DsNumFaces = NewFacesEdges.size();
 
     return mesh;
+}
 }

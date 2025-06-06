@@ -7,6 +7,8 @@
 #include <string> //libreria per le stringhe
 //(la libreria Eigen è già inclusa in Utils.hpp e PolyhedraMesh.hpp)
 
+using namespace std;
+
 namespace PolyhedraLibrary 
 {
 bool ImportMesh(PolyhedraMesh& mesh, string Poliedro) //funzione che importa una mesh poligonale. se ci sono errori e una funzione fallisce viene restituito false
@@ -22,7 +24,7 @@ bool ImportMesh(PolyhedraMesh& mesh, string Poliedro) //funzione che importa una
         return false;
     
     if(!ImportCell3Ds(mesh, Poliedro)) //importo la funzione per i dati relativi ai POLIEDRI
-        return false;
+        {return false;}
 }
 
 
@@ -32,10 +34,24 @@ bool ImportCell0Ds(PolyhedraMesh& mesh, string Poliedro) //funzione per importar
 //la funzione prende in input la mesh e il nome del poliedro
 {
     ifstream file;
-    file.open("./" + Poliedro + "_Cell0Ds.csv"); //apro il file
 
-    if(file.fail()) //controllo se il file è aperto
+    if(Poliedro == "Tetraedro"){
+        file.open("../Tetraedro/Tetraedro_Cell0Ds.csv");
+    }
+    else if(Poliedro == "Icosaedro"){
+        file.open("../Icosaedro/Icosaedro_Cell0Ds.csv");
+    }
+    else if(Poliedro == "Ottaedro"){
+        file.open("../Ottaedro/Ottaedro_Cell0Ds.csv");
+    }
+    else {cout << "Il nome della stringa non è valido" << endl;}
+
+
+    if(file.fail()){
+
+        cout << "Errore nell'apertura del file" << endl;
         return false;
+    }
 
     //leggo il file riga per riga e inserisco le righe in una lista
     list<string> listLines; //creo una lista di stringhe
@@ -76,10 +92,24 @@ bool ImportCell0Ds(PolyhedraMesh& mesh, string Poliedro) //funzione per importar
 bool ImportCell1Ds(PolyhedraMesh& mesh, string Poliedro) //implemento la funzione che deve raccogliere i dati relativi agli SPIGOLI
 {
     ifstream file;
-    file.open("./" + Poliedro + "_Cell1Ds.csv"); //apro il file da cui leggiamo i dati
 
-    if(file.fail()) //gestiamo l'apertura del file
+    if(Poliedro == "Tetraedro"){
+        file.open("../Tetraedro/Tetraedro_Cell1Ds.csv");
+    }
+    else if(Poliedro == "Icosaedro"){
+        file.open("../Icosaedro/Icosaedro_Cell1Ds.csv");
+    }
+    else if(Poliedro == "Ottaedro"){
+        file.open("../Ottaedro/Ottaedro_Cell1Ds.csv");
+    }
+    else {cout << "Il nome della stringa non è valido" << endl;}
+
+    if(file.fail()){
+
+        cout << "Errore nell'apertura del file" << endl;
         return false;
+    }
+
 
     list<string> listLines; //creo una lista di stringhe
 
@@ -124,10 +154,24 @@ bool ImportCell1Ds(PolyhedraMesh& mesh, string Poliedro) //implemento la funzion
 bool ImportCell2Ds(PolyhedraMesh& mesh, string Poliedro)
 {
     ifstream file;
-    file.open("./" + Poliedro + "_" + "Cell2Ds.csv");
 
-    if(file.fail())
+    if(Poliedro == "Tetraedro"){
+        file.open("../Tetraedro/Tetraedro_Cell2Ds.csv");
+    }
+    else if(Poliedro == "Icosaedro"){
+        file.open("../Icosaedro/Icosaedro_Cell2Ds.csv");
+    }
+    else if(Poliedro == "Ottaedro"){
+        file.open("../Ottaedro/Ottaedro_Cell2Ds.csv");
+    }
+    else {cout << "Il nome della stringa non è valido" << endl;}
+
+    if(file.fail()){
+
+        cout << "Errore nell'apertura del file" << endl;
         return false;
+    }
+
 
     list<string> listLines;
     string line;
@@ -204,10 +248,24 @@ bool ImportCell2Ds(PolyhedraMesh& mesh, string Poliedro)
 bool ImportCell3Ds(PolyhedraMesh& mesh, string Poliedro) //implemento la funzione che deve raccogliere i dati relativi agli SPIGOLI
 {
     ifstream file;
-    file.open("./" + Poliedro + "_Cell3Ds.csv"); //apro il file da cui leggiamo i dati
+    
+    if(Poliedro == "Tetraedro"){
+        file.open("../Tetraedro/Tetraedro_Cell3Ds.csv");
+    }
+    else if(Poliedro == "Icosaedro"){
+        file.open("../Icosaedro/Icosaedro_Cell3Ds.csv");
+    }
+    else if(Poliedro == "Ottaedro"){;
+        file.open("../Ottaedro/Ottaedro_Cell3Ds.csv");
+    }
+    else {cout << "Il nome della stringa non è valido" << endl;}
 
-    if(file.fail()) //gestiamo l'apertura del file
+    if(file.fail()){
+
+        cout << "Errore nell'apertura del file" << endl;
         return false;
+    }
+
 
     list<string> listLines; //creo una lista di stringhe
 
@@ -277,3 +335,4 @@ bool ImportCell3Ds(PolyhedraMesh& mesh, string Poliedro) //implemento la funzion
 }
 
 }
+
