@@ -1,14 +1,15 @@
 // TRIANGOLAZIONE.CPP
 
 #include <iostream>
-//#include "Eigen/Eigen"
+#include "Eigen/Eigen"
+#include "PolyhedraMesh.hpp"
+#include "Utils.hpp"
 
 using namespace std;
 using namespace Eigen;
 using namespace PolyhedraLibrary;
-#include "PolyhedraMesh.hpp"
-#include "Utils.hpp"
-#include "UCDUtilities.hpp"
+
+// #include "UCDUtilities.hpp"
 
 
 // Funzione di triangolazione del poliedro tipo I
@@ -51,7 +52,8 @@ PolyhedraMesh TriangolazioneI(PolyhedraMesh& mesh, unsigned int b)
     // Ciclo per ogni terna di vertici (faccia) all'interno della lista delle facce descritte da vertici (Cell2DsVertices)
     for(const auto& faccia : mesh.Cell2DsVertices){
 
-        MatrixXi MatriceTriangolazione = MatrixXi::Zero(b+1, b+1) -1; 
+        MatrixXi MatriceTriangolazione(b+1, b+1);
+        MatriceTriangolazione.setConstant(-1); 
 
         // Doppio ciclo per costruire i nuovi punti
         for (unsigned int i = 0; i <= b; i++){
@@ -99,7 +101,10 @@ PolyhedraMesh TriangolazioneI(PolyhedraMesh& mesh, unsigned int b)
                 int v3 = MatriceTriangolazione(i,j+1);
 
                 if(v1 != -1 && v2 != -1 && v3 != -1){
-                    NewFacesVertices.push_back({v1, v2, v3});
+
+                    // Uso static_cast<T> per trasformare in quest'occorrenza il tipo int in unsigned int (si può fare solo con tipi "simili")
+                    // perché NewFacesVertices è un vector<vector<unsigned int>>
+                    NewFacesVertices.push_back({static_cast<unsigned int>(v1), static_cast<unsigned int>(v2), static_cast<unsigned int>(v3)});
                     NewCell3DsFaces.push_back(Id_faccia++);
 
                     Nuovo_edge1 = true;
@@ -108,20 +113,20 @@ PolyhedraMesh TriangolazioneI(PolyhedraMesh& mesh, unsigned int b)
                     
                     // Controllo se i lati esistono già separatamente per ogni lato
                     for(unsigned int n = 0; n < currentedge; n++){
-                        if(NewCell1DsExtrema(0, n) == v1 && NewCell1DsExtrema(1, n) == v2 || 
-                        NewCell1DsExtrema(0, n) == v2 && NewCell1DsExtrema(1, n) == v1){
+                        if((NewCell1DsExtrema(0, n) == v1 && NewCell1DsExtrema(1, n) == v2) || 
+                        (NewCell1DsExtrema(0, n) == v2 && NewCell1DsExtrema(1, n) == v1)){
                             Id_edge1 = n;
                             Nuovo_edge1 = false;
                         } 
 
-                        if(NewCell1DsExtrema(0, n) == v2 && NewCell1DsExtrema(1, n) == v3 || 
-                        NewCell1DsExtrema(0, n) == v3 && NewCell1DsExtrema(1, n) == v2){
+                        if((NewCell1DsExtrema(0, n) == v2 && NewCell1DsExtrema(1, n) == v3) || 
+                        (NewCell1DsExtrema(0, n) == v3 && NewCell1DsExtrema(1, n) == v2)){
                             Id_edge2 = n;
                             Nuovo_edge2 = false;
                         } 
 
-                        if(NewCell1DsExtrema(0, n) == v3 && NewCell1DsExtrema(1, n) == v1 || 
-                        NewCell1DsExtrema(0, n) == v1 && NewCell1DsExtrema(1, n) == v3){
+                        if((NewCell1DsExtrema(0, n) == v3 && NewCell1DsExtrema(1, n) == v1) || 
+                        (NewCell1DsExtrema(0, n) == v1 && NewCell1DsExtrema(1, n) == v3)){
                             Id_edge3 = n;
                             Nuovo_edge3 = false;
                         }
@@ -159,7 +164,8 @@ PolyhedraMesh TriangolazioneI(PolyhedraMesh& mesh, unsigned int b)
                     int v3 = MatriceTriangolazione(i+1, j-1);
 
                     if(v1 != -1 && v2 != -1 && v3 != -1){
-                        NewFacesVertices.push_back({v1, v2, v3});
+
+                        NewFacesVertices.push_back({static_cast<unsigned int>(v1), static_cast<unsigned int>(v2), static_cast<unsigned int>(v3)});
                         NewCell3DsFaces.push_back(Id_faccia++);
                         
                         Nuovo_edge1 = true;
@@ -168,20 +174,20 @@ PolyhedraMesh TriangolazioneI(PolyhedraMesh& mesh, unsigned int b)
 
                         // Controllo se i lati esistono già separatamente per ogni lato
                         for(unsigned int n = 0; n < currentedge; n++){
-                            if(NewCell1DsExtrema(0, n) == v1 && NewCell1DsExtrema(1, n) == v2 || 
-                            NewCell1DsExtrema(0, n) == v2 && NewCell1DsExtrema(1, n) == v1){
+                            if((NewCell1DsExtrema(0, n) == v1 && NewCell1DsExtrema(1, n) == v2) || 
+                            (NewCell1DsExtrema(0, n) == v2 && NewCell1DsExtrema(1, n) == v1)){
                                 Id_edge1 = n;
                                 Nuovo_edge1 = false;
                             }
 
-                            if(NewCell1DsExtrema(0, n) == v2 && NewCell1DsExtrema(1, n) == v3 || 
-                            NewCell1DsExtrema(0, n) == v3 && NewCell1DsExtrema(1, n) == v2){
+                            if((NewCell1DsExtrema(0, n) == v2 && NewCell1DsExtrema(1, n) == v3) || 
+                            (NewCell1DsExtrema(0, n) == v3 && NewCell1DsExtrema(1, n) == v2)){
                                 Id_edge2 = n;
                                 Nuovo_edge2 = false;
                             } 
 
-                            if(NewCell1DsExtrema(0, n) == v3 && NewCell1DsExtrema(1, n) == v1 || 
-                            NewCell1DsExtrema(0, n) == v1 && NewCell1DsExtrema(1, n) == v3){
+                            if((NewCell1DsExtrema(0, n) == v3 && NewCell1DsExtrema(1, n) == v1) || 
+                            (NewCell1DsExtrema(0, n) == v1 && NewCell1DsExtrema(1, n) == v3)){
                                 Id_edge3 = n;
                                 Nuovo_edge3 = false;
                             }

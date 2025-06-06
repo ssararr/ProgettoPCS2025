@@ -46,7 +46,7 @@ bool outputFile(const PolyhedraMesh& triangolata, const string& OutputFile0, con
     for (unsigned int i=0; i<triangolata.NumCell0Ds; i++) //n righe
     {
         Cell0Ds.unsetf(ios::fixed); // disattiva il formato fixed, perché gli id mi servono interi (potrebbe essere superfluo, perché gli id sono già interi)
-        Cell0Ds << triangolata.Cell0DsId[i] << " " //ID del vertice
+        Cell0Ds << triangolata.Cell0DsId[i] << " ";//ID del vertice
         Cell0Ds << fixed << setprecision(16)
                 << triangolata.Cell0DsCoordinates(0, i) << " " //coordinata x
                 << triangolata.Cell0DsCoordinates(1, i) << " " //coordinata y
