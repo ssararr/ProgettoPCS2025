@@ -9,6 +9,11 @@ using namespace std;
 using namespace Eigen;
 using namespace PolyhedraLibrary;
 
+
+void printMatrix(const Eigen::MatrixXd& m) {
+    std::cout << "Matrix:\n" << m << std::endl;
+}
+
 // #include "UCDUtilities.hpp"
 
 
@@ -58,7 +63,7 @@ PolyhedraMesh TriangolazioneI(PolyhedraMesh& mesh, unsigned int b)
         MatriceTriangolazione.setConstant(-1); 
 
         // Doppio ciclo per costruire i nuovi punti
-        for (unsigned int i = 0; i <= b; i++){
+        for (unsigned int i = 0; i < b+1; i++){
             for (unsigned int j = 0; j <= b - i; j++){
                 
                 double alpha = i/b1;
@@ -247,7 +252,10 @@ PolyhedraMesh TriangolazioneI(PolyhedraMesh& mesh, unsigned int b)
     mesh.NumCell2Ds = NewFacesEdges.size();
 
     mesh.Cell0DsCoordinates = NewCell0DsCoordinates;
+    mesh.Cell0DsId = NewCell3DsVertices;
+    mesh.Cell1DsId = NewCell3DsEdges;
     mesh.Cell1DsExtrema = NewCell1DsExtrema;
+    mesh.Cell2DsId = NewCell3DsFaces;
     mesh.Cell2DsVertices = NewFacesVertices;
     mesh.Cell2DsEdges = NewFacesEdges;
 
@@ -261,4 +269,5 @@ PolyhedraMesh TriangolazioneI(PolyhedraMesh& mesh, unsigned int b)
 
     return mesh;
 }
+
 }
