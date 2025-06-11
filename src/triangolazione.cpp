@@ -4,25 +4,26 @@
 #include "Eigen/Eigen"
 #include "PolyhedraMesh.hpp"
 #include "Utils.hpp"
+#include <map> // dizionari
+#include <algorithm>  // per min e max
+// #include "UCDUtilities.hpp"
 
 using namespace std;
 using namespace Eigen;
 using namespace PolyhedraLibrary;
 
 
-void printMatrix(const Eigen::MatrixXd& m) {
+// Funzione per debuggare
+void printMatrix(const Eigen::MatrixXi& m) {
     std::cout << "Matrix:\n" << m << std::endl;
 }
 
-// #include "UCDUtilities.hpp"
 
 
 // Funzione di triangolazione del poliedro tipo I
 // generiamo uno spazio convesso tramite la combinazione convessa aA+bB+cC, con a+b+c=1, A,B,C vertici del triangolo della faccia
 // la combinazione convessa viene discretizzata per generare (b+1)(b+2)/2 punti, dividendo la combinazione per b: (i/b)*A+(j/b)*B+(b-i-j/b)*C, i+j<=b
-// i nuovi vertici sono (b+1)(b+2)/2
-// i nuovi lati sono 3b(b+1)/2
-// le nuove facce sono b^2
+
 
 namespace PolyhedraLibrary{
 
@@ -45,10 +46,11 @@ PolyhedraMesh TriangolazioneI(PolyhedraMesh& mesh, unsigned int b)
     unsigned int Id_edge3 = 0;
     unsigned int Id_faccia = 0;
 
+    map<pair<unsigned int, unsigned int>, unsigned int> edgeMap;
+
+
     bool Nuovo = true;
-    bool Nuovo_edge1 = true;
-    bool Nuovo_edge2 = true;
-    bool Nuovo_edge3 = true;
+
 
     vector<vector<unsigned int>> NewFacesVertices;
     vector<vector<unsigned int>> NewFacesEdges;
@@ -129,52 +131,67 @@ PolyhedraMesh TriangolazioneI(PolyhedraMesh& mesh, unsigned int b)
                     NewFacesVertices.push_back({static_cast<unsigned int>(v1), static_cast<unsigned int>(v2), static_cast<unsigned int>(v3)});
                     NewCell3DsFaces.push_back(Id_faccia++);
 
-                    Nuovo_edge1 = true;
-                    Nuovo_edge2 = true;
-                    Nuovo_edge3 = true;
-                    
-                    // Controllo se i lati esistono già separatamente per ogni lato
-                    for(unsigned int n = 0; n < currentedge; n++){
-                        if((NewCell1DsExtrema(0, n) == v1 && NewCell1DsExtrema(1, n) == v2) || 
-                        (NewCell1DsExtrema(0, n) == v2 && NewCell1DsExtrema(1, n) == v1)){
-                            Id_edge1 = n;
-                            Nuovo_edge1 = false;
-                        } 
 
-                        if((NewCell1DsExtrema(0, n) == v2 && NewCell1DsExtrema(1, n) == v3) || 
-                        (NewCell1DsExtrema(0, n) == v3 && NewCell1DsExtrema(1, n) == v2)){
-                            Id_edge2 = n;
-                            Nuovo_edge2 = false;
-                        } 
 
-                        if((NewCell1DsExtrema(0, n) == v3 && NewCell1DsExtrema(1, n) == v1) || 
-                        (NewCell1DsExtrema(0, n) == v1 && NewCell1DsExtrema(1, n) == v3)){
-                            Id_edge3 = n;
-                            Nuovo_edge3 = false;
-                        }
-                    }
-                    
-                    // Ogni lato che non esiste viene aggiunto alla matrice di estremi e viene salvato l'id di ogni vertice
-                    if(Nuovo_edge1 == true){
+                    // Il check di esistenza degli edge ora avviene con dizionari: il dizionario è del tipo {v1, v2} : Id_edge, viene fatto 
+                    // per ogni combinazione possibile {v1, v2}, {v2, v3}, {v3, v1}
+
+                    // Ordine crescente degli estremi così da non rendere importante l'ordine in cui sono forniti
+                    unsigned int a = min(v1, v2);
+                    unsigned int b = max(v1, v2);
+                    pair<unsigned int, unsigned int> edgeKey = {a, b};
+
+                    // Iteratore sulle chiavi (ovvero le coppie) del dizionario
+                    auto it = edgeMap.find(edgeKey);
+                    if (it != edgeMap.end()) {
+                        // Già esiste -> usa ID esistente
+                        Id_edge1 = it->second;
+                    } else {
+                        // Nuovo edge -> aggiungi alla matrice e crea nuovo elemento nella mappa
                         Id_edge1 = currentedge;
                         NewCell1DsExtrema(0, Id_edge1) = v1;
                         NewCell1DsExtrema(1, Id_edge1) = v2;
                         NewCell3DsEdges.push_back(Id_edge1);
-                        currentedge++;}
-                    if(Nuovo_edge2 == true){
+                        edgeMap[edgeKey] = Id_edge1;
+                        currentedge++;
+                    }
+
+
+                    a = min(v2, v3);
+                    b = max(v2, v3);
+                    edgeKey = {a, b};
+
+                    it = edgeMap.find(edgeKey);
+                    if (it != edgeMap.end()) {
+                        Id_edge2 = it->second;}
+                    else {
                         Id_edge2 = currentedge;
                         NewCell1DsExtrema(0, Id_edge2) = v2;
                         NewCell1DsExtrema(1, Id_edge2) = v3;
                         NewCell3DsEdges.push_back(Id_edge2);
-                        currentedge++;}
-                    if(Nuovo_edge3 == true){    
-                        Id_edge3 = currentedge;
-                        NewCell1DsExtrema(0, Id_edge3) = v3;
-                        NewCell1DsExtrema(1, Id_edge3) = v1;
-                        NewCell3DsEdges.push_back(Id_edge3);
+                        edgeMap[edgeKey] = Id_edge2;
                         currentedge++;
                     }
-                    
+
+
+                    a = min(v1, v3);
+                    b = max(v1, v3);
+                    edgeKey = {a, b};
+
+                    it = edgeMap.find(edgeKey);
+                    if (it != edgeMap.end()) {
+                        Id_edge3 = it->second;}
+                    else {
+                        Id_edge3 = currentedge;
+                        NewCell1DsExtrema(0, Id_edge3) = v1;
+                        NewCell1DsExtrema(1, Id_edge3) = v3;
+                        NewCell3DsEdges.push_back(Id_edge3);
+                        edgeMap[edgeKey] = Id_edge3;
+                        currentedge++;
+                    }
+
+
+
                     // Aggiungo la faccia caratterizzata dagli edges
                     NewFacesEdges.push_back({Id_edge1, Id_edge2, Id_edge3});
                 
@@ -190,49 +207,54 @@ PolyhedraMesh TriangolazioneI(PolyhedraMesh& mesh, unsigned int b)
                         NewFacesVertices.push_back({static_cast<unsigned int>(v1), static_cast<unsigned int>(v2), static_cast<unsigned int>(v3)});
                         NewCell3DsFaces.push_back(Id_faccia++);
                         
-                        Nuovo_edge1 = true;
-                        Nuovo_edge2 = true;
-                        Nuovo_edge3 = true;
-
-                        // Controllo se i lati esistono già separatamente per ogni lato
-                        for(unsigned int n = 0; n < currentedge; n++){
-                            if((NewCell1DsExtrema(0, n) == v1 && NewCell1DsExtrema(1, n) == v2) || 
-                            (NewCell1DsExtrema(0, n) == v2 && NewCell1DsExtrema(1, n) == v1)){
-                                Id_edge1 = n;
-                                Nuovo_edge1 = false;
-                            }
-
-                            if((NewCell1DsExtrema(0, n) == v2 && NewCell1DsExtrema(1, n) == v3) || 
-                            (NewCell1DsExtrema(0, n) == v3 && NewCell1DsExtrema(1, n) == v2)){
-                                Id_edge2 = n;
-                                Nuovo_edge2 = false;
-                            } 
-
-                            if((NewCell1DsExtrema(0, n) == v3 && NewCell1DsExtrema(1, n) == v1) || 
-                            (NewCell1DsExtrema(0, n) == v1 && NewCell1DsExtrema(1, n) == v3)){
-                                Id_edge3 = n;
-                                Nuovo_edge3 = false;
-                            }
-                        }
                         
-                        // Ogni lato che non esiste viene aggiunto alla matrice di estremi e viene salvato l'id di ogni vertice
-                        if(Nuovo_edge1 == true){
+                        unsigned int a = min(v1, v2);
+                        unsigned int b = max(v2, v1);
+                        pair<unsigned int, unsigned int> edgeKey = {a, b};
+
+                        auto it = edgeMap.find(edgeKey);
+                        if (it != edgeMap.end()) {
+                            Id_edge1 = it->second;}
+                        else {
                             Id_edge1 = currentedge;
                             NewCell1DsExtrema(0, Id_edge1) = v1;
                             NewCell1DsExtrema(1, Id_edge1) = v2;
                             NewCell3DsEdges.push_back(Id_edge1);
-                            currentedge++;}
-                        if(Nuovo_edge2 == true){
+                            edgeMap[edgeKey] = Id_edge1;
+                            currentedge++;
+                        }
+                        
+                        
+                        a = min(v2, v3);
+                        b = max(v2, v3);
+                        edgeKey = {a, b};
+
+                        it = edgeMap.find(edgeKey);
+                        if (it != edgeMap.end()) {
+                            Id_edge2 = it->second;}
+                        else {
                             Id_edge2 = currentedge;
                             NewCell1DsExtrema(0, Id_edge2) = v2;
                             NewCell1DsExtrema(1, Id_edge2) = v3;
                             NewCell3DsEdges.push_back(Id_edge2);
-                            currentedge++;}
-                        if(Nuovo_edge3 == true){    
+                            edgeMap[edgeKey] = Id_edge2;
+                            currentedge++;
+                        }
+
+
+                        a = min(v1, v3);
+                        b = max(v1, v3);
+                        edgeKey = {a, b};
+
+                        it = edgeMap.find(edgeKey);
+                        if (it != edgeMap.end()){
+                            Id_edge3 = it->second;}
+                         else{
                             Id_edge3 = currentedge;
-                            NewCell1DsExtrema(0, Id_edge3) = v3;
-                            NewCell1DsExtrema(1, Id_edge3) = v1;
+                            NewCell1DsExtrema(0, Id_edge3) = v1;
+                            NewCell1DsExtrema(1, Id_edge3) = v3;
                             NewCell3DsEdges.push_back(Id_edge3);
+                            edgeMap[edgeKey] = Id_edge3;
                             currentedge++;
                         }
                     
@@ -246,6 +268,7 @@ PolyhedraMesh TriangolazioneI(PolyhedraMesh& mesh, unsigned int b)
         }
     }
 
+    
     // Riempio la mesh del poligono triangolato
     mesh.NumCell0Ds = currentpoint;
     mesh.NumCell1Ds = currentedge;
@@ -267,7 +290,8 @@ PolyhedraMesh TriangolazioneI(PolyhedraMesh& mesh, unsigned int b)
     mesh.Cell3DsNumEdges = currentedge;
     mesh.Cell3DsNumFaces = NewFacesEdges.size();
 
-    return mesh;
+    return mesh; 
+
 }
 
 }
