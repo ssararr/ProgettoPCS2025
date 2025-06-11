@@ -145,7 +145,7 @@ PolyhedraMesh TriangolazioneI(PolyhedraMesh& mesh, unsigned int b)
                     auto it = edgeMap.find(edgeKey);
                     if (it != edgeMap.end()) {
                         // Già esiste -> usa ID esistente
-                        Id_edge1 = it->second;
+                        Id_edge1 = it->second; // sintassi rapita per dire che a Id_edge1 va assegnato il secondo valore dell'iteratore (non la chiave ma l'Id)
                     } else {
                         // Nuovo edge -> aggiungi alla matrice e crea nuovo elemento nella mappa
                         Id_edge1 = currentedge;
