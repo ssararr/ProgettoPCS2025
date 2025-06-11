@@ -29,8 +29,27 @@ namespace PolyhedraLibrary{
 
 PolyhedraMesh TriangolazioneI(PolyhedraMesh& mesh, unsigned int b)
 {
-    unsigned int NewNumVertices = 10*b*b + 2; // numero di vertici DI TUTTO IL POLIEDRO (formula solo per Icosaedro, sto testando)
-    unsigned int NewNumEdges = 30*b*b; // numero di edges DI TUTTO IL POLIEDRO
+    unsigned int NewNumEdges;
+    unsigned int NewNumVertices;
+    
+    // Tetraedro
+    if(mesh.NumCell0Ds == 4){ 
+        NewNumVertices = 2*b*b + 2; // numero di vertici DI TUTTO IL POLIEDRO 
+        NewNumEdges = 6*b*b; // numero di edges DI TUTTO IL POLIEDRO
+    }
+    
+    // Ottaedro
+    if(mesh.NumCell0Ds == 6){
+        NewNumVertices = 4*b*b + 2;
+        NewNumEdges = 12*b*b; 
+    }
+
+    // Icosaedro
+    if(mesh.NumCell0Ds == 12){
+        NewNumVertices = 10*b*b + 2;
+        NewNumEdges = 30*b*b;
+    }
+
     double b1 = b;  // Necessario perché, quando si fa i/b avrei divisione intera mentre mi serve che i/b sia un double
     double tol = 1e-6;
 
