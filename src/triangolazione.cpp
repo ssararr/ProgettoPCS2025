@@ -297,6 +297,9 @@ PolyhedraMesh TriangolazioneI(PolyhedraMesh& mesh, unsigned int b)
     mesh.Cell0DsId = NewCell3DsVertices;
     mesh.Cell1DsId = NewCell3DsEdges;
     mesh.Cell1DsExtrema = NewCell1DsExtrema;
+
+    mesh.Cell2DsNumEdges = NewCell2DsNumEdges;
+    mesh.Cell2DsNumVertices = NewCell2DsNumEdges;
     mesh.Cell2DsId = NewCell3DsFaces;
     mesh.Cell2DsVertices = NewFacesVertices;
     mesh.Cell2DsEdges = NewFacesEdges;
