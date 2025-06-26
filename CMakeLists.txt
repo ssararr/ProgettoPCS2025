@@ -41,6 +41,8 @@ list(APPEND ProgettoPCS2025_SOURCES ${src_sources})
 list(APPEND ProgettoPCS2025_HEADERS ${src_headers})
 list(APPEND ProgettoPCS2025_INCLUDE ${src_includes})
 
+add_subdirectory(ExportParaview)
+
 #add_subdirectory(src_test)
 
 #list(APPEND ProgettoPCS2025_TEST_SOURCES ${src_test_sources})
@@ -57,6 +59,8 @@ add_executable(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME} ${ProgettoPCS2025_LINKED_LIBRARIES})
 target_include_directories(${PROJECT_NAME} PRIVATE ${ProgettoPCS2025_INCLUDE})
 target_compile_options(${PROJECT_NAME} PUBLIC -fPIC)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${ProgettoPCS2025_LINKED_LIBRARIES} ExportParaview)
+
 
 #add_executable(${PROJECT_NAME}_TEST
 #      main_test.cpp

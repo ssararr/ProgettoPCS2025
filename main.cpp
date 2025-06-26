@@ -8,7 +8,7 @@
 #include "triangolazione.hpp"
 #include "Duale.hpp"
 #include "output.hpp"
-// #include "UCDUtilities.hpp"
+#include "UCDUtilities.hpp"
 
 using namespace std;
 using namespace Eigen;
@@ -122,8 +122,21 @@ int main(int argc, char *argv[]){
 
         outputFile(mesh, "Cell0Ds.txt", "Cell1Ds.txt", "Cell2Ds.txt", "Cell3Ds.txt"); 
 
-        return 0;
+       //esporto le mesh
+	    Gedim::UCDUtilities utilities;
+	    utilities.ExportPoints("./Cell0Ds.inp", 
+	    					   mesh.Cell0DsCoordinates);
+	
+	    utilities.ExportSegments("./Cell1Ds.inp",
+                                 mesh.Cell0DsCoordinates,
+                                 mesh.Cell1DsExtrema);
 
+        utilities.ExportPolygons("./Cell2Ds.inp",
+                                 mesh.Cell0DsCoordinates,
+                                 mesh.Cell2DsVertices);
+
+
+        return 0;
     }
 
     else if(argc <= 1){
