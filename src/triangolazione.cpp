@@ -164,7 +164,7 @@ PolyhedraMesh TriangolazioneI(PolyhedraMesh& mesh, unsigned int b)
                     auto it = edgeMap.find(edgeKey);
                     if (it != edgeMap.end()) {
                         // Già esiste -> usa ID esistente
-                        Id_edge1 = it->second; // sintassi rapita per dire che a Id_edge1 va assegnato il secondo valore dell'iteratore (non la chiave ma l'Id)
+                        Id_edge1 = it->second;
                     } else {
                         // Nuovo edge -> aggiungi alla matrice e crea nuovo elemento nella mappa
                         Id_edge1 = currentedge;
@@ -287,6 +287,7 @@ PolyhedraMesh TriangolazioneI(PolyhedraMesh& mesh, unsigned int b)
         }
     }
 
+    vector<unsigned int> NewCell2DsNumEdges(NewFacesEdges.size(), 3);
     
     // Riempio la mesh del poligono triangolato
     mesh.NumCell0Ds = currentpoint;
