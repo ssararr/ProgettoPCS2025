@@ -8,12 +8,14 @@
 #include "triangolazione.hpp"
 #include "Duale.hpp"
 #include "output.hpp"
-#include "UCDUtilities.hpp"
+#include "src/Proiezione.hpp"
+#include "ExportParaview/UCDUtilities.hpp"
+#include <fstream>
 
 using namespace std;
 using namespace Eigen;
 using namespace PolyhedraLibrary;
-
+using namespace Gedim;
 
 // La funzione prende la coppia {p, q} e una variabile booleana che serve
 //per capire se dobbiamo fare il duale (duale = true) o no (duale = false)
@@ -119,11 +121,18 @@ int main(int argc, char *argv[]){
             }
             cout << "Mesh duale del " << Poliedro << " creata." << endl;
         }
+  
 
+        //proiezione su una sfera
+        ProiezioneSfera(mesh);
+
+
+        //output della mesh triangolata
         outputFile(mesh, "Cell0Ds.txt", "Cell1Ds.txt", "Cell2Ds.txt", "Cell3Ds.txt"); 
 
-       //esporto le mesh
-	    Gedim::UCDUtilities utilities;
+
+        //esporto le mesh
+	    UCDUtilities utilities;
 	    utilities.ExportPoints("./Cell0Ds.inp", 
 	    					   mesh.Cell0DsCoordinates);
 	
@@ -136,6 +145,7 @@ int main(int argc, char *argv[]){
                                  mesh.Cell2DsVertices);
 
 
+                                 
         return 0;
     }
 

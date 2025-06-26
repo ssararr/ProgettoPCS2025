@@ -187,4 +187,3 @@ bool outputFile(const PolyhedraMesh& triangolata, const string& OutputFile0, con
 
 
 
-

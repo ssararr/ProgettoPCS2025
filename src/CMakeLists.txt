@@ -5,6 +5,7 @@ list(APPEND src_headers
     ${CMAKE_CURRENT_SOURCE_DIR}/Duale.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/triangolazione.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/output.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Proiezione.hpp
 )
 
 # Sources
@@ -13,6 +14,7 @@ list(APPEND src_sources
     ${CMAKE_CURRENT_SOURCE_DIR}/Duale.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/triangolazione.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/output.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Proiezione.cpp
 )
 
 
