@@ -5,6 +5,8 @@
 #include "PolyhedraMesh.hpp"
 #include "Utils.hpp"
 #include <map> // dizionari
+#include <set>
+#include <cmath>
 #include <algorithm>  // per min e max
 // #include "UCDUtilities.hpp"
 
@@ -14,8 +16,26 @@ using namespace PolyhedraLibrary;
 
 
 // Funzione per debuggare
-void printMatrix(const Eigen::MatrixXi& m) {
-    std::cout << "Matrix:\n" << m << std::endl;
+void printMatrix(const MatrixXd& m) {
+    cout << "Matrix:\n" << m << endl;
+}
+
+// Funzione che verifica se un punto P giace sulla retta passante per altri due punti A, B
+bool PuntoSuSpigolo(const Vector3d& A, const Vector3d& B, const Vector3d& P, double tol = 1e-12) {
+    Vector3d AB = B - A;
+    Vector3d AP = P - A;
+
+    double ab_len = AB.norm();
+    double cross_norm = AB.cross(AP).norm();
+    double dot = AB.dot(AP);
+
+    // 1. allineamento
+    bool allineato = (cross_norm / ab_len) < tol;
+
+    // 2. punto compreso tra A e B
+    bool compreso = (dot >= -tol) && (dot <= AB.squaredNorm() + tol);
+
+    return allineato && compreso;
 }
 
 
@@ -54,10 +74,19 @@ PolyhedraMesh TriangolazioneI(PolyhedraMesh& mesh, unsigned int b)
     double tol = 1e-6;
 
     MatrixXd NewCell0DsCoordinates = MatrixXd::Zero(3, NewNumVertices); 
+
+    // Copia i vertici originali nei primi ID
+    for (unsigned int i = 0; i < mesh.NumCell0Ds; ++i) {
+        NewCell0DsCoordinates(0, i) = mesh.Cell0DsCoordinates(0, i);
+        NewCell0DsCoordinates(1, i) = mesh.Cell0DsCoordinates(1, i);
+        NewCell0DsCoordinates(2, i) = mesh.Cell0DsCoordinates(2, i);
+    }
+
+
     MatrixXi NewCell1DsExtrema = MatrixXi::Zero(2, NewNumEdges);
 
     // currentpoint segna a quale punto siamo arrivati, Id serve ad assegnare il corretto id ad ogni punto e Nuovo specifica se il punto esiste già o meno
-    unsigned int currentpoint = 0;
+    unsigned int currentpoint = mesh.NumCell0Ds;
     unsigned int currentedge = 0;
     unsigned int Id = 0;
     unsigned int Id_edge1 = 0;
@@ -74,7 +103,12 @@ PolyhedraMesh TriangolazioneI(PolyhedraMesh& mesh, unsigned int b)
     vector<vector<unsigned int>> NewFacesVertices;
     vector<vector<unsigned int>> NewFacesEdges;
     vector<unsigned int> NewCell3DsFaces;
+    
     vector<unsigned int> NewCell3DsVertices;
+    for (unsigned int i=0; i < mesh.NumCell0Ds; i++){
+        NewCell3DsVertices.push_back(i);
+    }
+
     vector<unsigned int> NewCell3DsEdges;
     
     // Ciclo per ogni terna di vertici (faccia) all'interno della lista delle facce descritte da vertici (Cell2DsVertices)
@@ -315,6 +349,145 @@ PolyhedraMesh TriangolazioneI(PolyhedraMesh& mesh, unsigned int b)
 
     return mesh; 
 
+}
+
+
+
+PolyhedraMesh TriangolazioneII(PolyhedraMesh& mesh, unsigned int b){
+
+    unsigned int NewNumE;
+    unsigned int NewNumV;
+
+    // Salvo gli spigoli del poliedro di partenza, perché serviranno per verificare i punti da inserire, in un vettore di coppie, ogni
+    // elemento della coppia è un vettore Eigen di coordinate
+    vector<pair<Vector3d, Vector3d>> EdgesOriginali;
+    for(unsigned int n = 0; n < mesh.NumCell1Ds; n++){
+        Vector3d P = mesh.Cell0DsCoordinates.col(mesh.Cell1DsExtrema(0,n));
+        Vector3d Q = mesh.Cell0DsCoordinates.col(mesh.Cell1DsExtrema(1,n));
+        EdgesOriginali.push_back({P,Q});
+        cout << "Aggiunto lato originale " << n << ": " << min(mesh.Cell1DsExtrema(0, n), mesh.Cell1DsExtrema(1, n)) << ", " << max(mesh.Cell1DsExtrema(0, n), mesh.Cell1DsExtrema(1, n)) << endl;
+    }
+
+
+    // Tetraedro
+    if(mesh.NumCell0Ds == 4){ 
+        // NewNumV = 6*b*b + 6*b + 2; // numero di vertici DI TUTTO IL TETRAEDRO 
+        NewNumV = 6*b*b + 6*b + 2;
+        NewNumE = 18*b*b; // numero di edges DI TUTTO IL POLIEDRO
+    }
+    
+    // Ottaedro
+    if(mesh.NumCell0Ds == 6){
+        NewNumV = 12*b*b + 2;
+        NewNumE = 36*b*b; 
+    }
+
+    // Icosaedro
+    if(mesh.NumCell0Ds == 12){
+        NewNumV = 30*b*b + 2;
+        NewNumE = 90*b*b;
+    }
+
+
+    // La triangolazione II si basa sulla I: triangolo di tipo I ogni faccia e poi, per ogni nuova faccia, effettuo la 
+    // triangolazione II nel caso b = 1
+    
+    TriangolazioneI(mesh, b);
+    unsigned int currentpoint = mesh.NumCell0Ds;
+
+    // Usiamo un dizionario per verificare se il punto esiste già o meno
+    map<array<double, 3>, unsigned int> VerticesMap;
+
+    // conservativeResize aumenta la dimensione mantenendo gli elementi già presenti (i punti della triangolazione I)
+    mesh.Cell0DsCoordinates.conservativeResize(3, NewNumV);
+    cout << "Dimensioni matrice di coordinate: " << mesh.Cell0DsCoordinates.rows() << " x " << mesh.Cell0DsCoordinates.cols() << "\n" << endl;
+
+
+    for(const auto& faccia : mesh.Cell2DsVertices){
+        
+        Vector3d A = mesh.Cell0DsCoordinates.col(faccia[0]);
+        VerticesMap.try_emplace({A(0), A(1), A(2)}, faccia[0]);  // try_emplace verifica se è già esistente la chiave, altrimenti inserisce coppia chiave-valore
+        //if(VerticesMap.try_emplace({A(0), A(1), A(2)}, faccia[0]).second){
+        //  cout << "Inserito punto " << faccia[0] << " di coordinate: (" << A(0) << ", " << A(1) << ", " << A(2) << ")" << endl;}
+        
+        Vector3d B = mesh.Cell0DsCoordinates.col(faccia[1]);
+        VerticesMap.try_emplace({B(0), B(1), B(2)}, faccia[1]);
+        //if(VerticesMap.try_emplace({B(0), B(1), B(2)}, faccia[1]).second)
+        //{cout << "Inserito punto " << faccia[1] << " di coordinate: (" << B(0) << ", " << B(1) << ", " << B(2) << ")" << endl;}
+
+        Vector3d C = mesh.Cell0DsCoordinates.col(faccia[2]);
+        VerticesMap.try_emplace({C(0), C(1), C(2)}, faccia[2]);
+        //if(VerticesMap.try_emplace({C(0), C(1), C(2)}, faccia[2]).second)
+        //{cout << "Inserito punto " << faccia[2] << " di coordinate: (" << C(0) << ", " << C(1) << ", " << C(2) << ")"<< endl;} 
+
+
+        // Calcolo punti medi dei lati e baricentro e provo a inserirli nella mappa, se riesco a inserirli allora sono nuovi punti e
+        // incremento il contatore currentpoint, gli ID dei punti della nuova triangolazione saranno tutti maggiori degli ID dei precedenti
+        // poiché currentpoint parte dall'ultimo Id della triangolazione I
+
+        Vector3d m_AB = (A+B)/2;
+
+        // Per verificare se un punto va aggiunto o meno, verifico se giace su un edge presente all'inizio, in tal caso lo aggiungo, 
+        // altrimenti si tratta di un punto interno non presente nella triangolazione II
+
+        for(const auto& edge : EdgesOriginali){
+            if(PuntoSuSpigolo(edge.first, edge.second, m_AB)){
+                auto risultato = VerticesMap.try_emplace({m_AB(0), m_AB(1), m_AB(2)}, currentpoint);
+                if(risultato.second){
+                    cout << "Punto medio del lato: " << faccia[0] << ", " << faccia[1] << " inserito: (" << m_AB(0) << ", " << m_AB(1) << ", " << m_AB(2) << ")\n" << endl;
+                    unsigned int id = risultato.first->second;
+                    mesh.Cell0DsCoordinates.col(id) = m_AB; 
+                    mesh.Cell0DsId.push_back(id);
+                    currentpoint++; 
+                }
+                break;  // Se il punto va aggiunto, smetto di verificare se vada aggiunto
+            }
+        }
+
+        Vector3d m_BC = (B+C)/2;
+        for(const auto& edge : EdgesOriginali){
+            if(PuntoSuSpigolo(edge.first, edge.second, m_BC)){
+                auto risultato = VerticesMap.try_emplace({m_BC(0), m_BC(1), m_BC(2)}, currentpoint);
+                if(risultato.second){
+                    cout << "Punto medio del lato: " << faccia[1] << ", " << faccia[2] << " inserito: (" << m_BC(0) << ", " << m_BC(1) << ", " << m_BC(2) << ")\n" << endl;
+                    unsigned int id = risultato.first->second;
+                    mesh.Cell0DsCoordinates.col(id) = m_BC; 
+                    mesh.Cell0DsId.push_back(id);
+                    currentpoint++; 
+                }
+                break;
+            }
+        }
+
+        Vector3d m_CA = (C+A)/2;
+        for(const auto& edge : EdgesOriginali){
+            if(PuntoSuSpigolo(edge.first, edge.second, m_CA)){
+                auto risultato = VerticesMap.try_emplace({m_CA(0), m_CA(1), m_CA(2)}, currentpoint);
+                if(risultato.second){
+                    cout << "Punto medio del lato: " << faccia[2] << ", " << faccia[0] << " inserito: ("<< m_CA(0) << ", " << m_CA(1) << ", " << m_CA(2) << ")\n" << endl;
+                    unsigned int id = risultato.first->second;
+                    mesh.Cell0DsCoordinates.col(id) = m_CA; 
+                    mesh.Cell0DsId.push_back(id);
+                    currentpoint++; 
+                }
+                break;
+            }
+        }
+
+        // Non controllo se il baricentro esiste già perché è sempre interno al triangolo quindi mai in comune
+        Vector3d baricentro = (A+B+C)/3;
+        VerticesMap[{baricentro(0), baricentro(1), baricentro(2)}] = currentpoint;
+        mesh.Cell0DsCoordinates.col(VerticesMap[{baricentro(0), baricentro(1), baricentro(2)}]) = baricentro;
+        cout << "Baricentro della faccia " << faccia[0] << ", " << faccia[1] << ", " << faccia[2] << " inserito: (" << baricentro(0) << ", " << baricentro(1) << ", " << baricentro(2) << ")\n" << endl;
+        mesh.Cell0DsId.push_back(VerticesMap[{baricentro(0), baricentro(1), baricentro(2)}]);
+        currentpoint++;
+        
+    }
+
+    mesh.NumCell0Ds = currentpoint;
+
+
+    return mesh;
 }
 
 }

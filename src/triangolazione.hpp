@@ -11,4 +11,6 @@ namespace PolyhedraLibrary{
 
     PolyhedraMesh TriangolazioneI(PolyhedraMesh& mesh, unsigned int b);
 
+    PolyhedraMesh TriangolazioneII(PolyhedraMesh& mesh, unsigned int b);
+    
 }

@@ -104,6 +104,7 @@ int main(int argc, char *argv[]){
             cout << "Triangolazione di tipo I del " << Poliedro << " eseguita con c = " << c << endl;
         }
         else if (b>0 && c==b) {
+            TriangolazioneII(mesh, b);
             cout << "Triangolazione di tipo II del " << Poliedro << " eseguita con b = " << b << " e c = " << c << endl;
         }
         else{
