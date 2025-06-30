@@ -7,20 +7,15 @@
 #include <map> // dizionari
 #include <set>
 #include <cmath>
-#include <algorithm>  // per min e max
-// #include "UCDUtilities.hpp"
+#include <algorithm>  // per min e max e sort()
+
 
 using namespace std;
 using namespace Eigen;
 using namespace PolyhedraLibrary;
 
 
-// Funzione per debuggare
-void printMatrix(const MatrixXd& m) {
-    cout << "Matrix:\n" << m << endl;
-}
-
-// Funzione che verifica se un punto P giace sulla retta passante per altri due punti A, B
+// Funzione che verifica se un punto P giace sul segmento AB
 bool PuntoSuSpigolo(const Vector3d& A, const Vector3d& B, const Vector3d& P, double tol = 1e-12) {
     Vector3d AB = B - A;
     Vector3d AP = P - A;
@@ -29,21 +24,82 @@ bool PuntoSuSpigolo(const Vector3d& A, const Vector3d& B, const Vector3d& P, dou
     double cross_norm = AB.cross(AP).norm();
     double dot = AB.dot(AP);
 
-    // 1. allineamento
     bool allineato = (cross_norm / ab_len) < tol;
-
-    // 2. punto compreso tra A e B
     bool compreso = (dot >= -tol) && (dot <= AB.squaredNorm() + tol);
 
     return allineato && compreso;
+
 }
 
+// Funzione che aggiunge un vertice se non è già presente, aggiungendolo alla matrice di coordinate e aggiungendone l'Id alla lista di Id
+bool AggiungiVertice(const Vector3d& P, 
+            map<array<double, 3>, unsigned int>& VerticesMap, 
+            MatrixXd& Coordinates, 
+            vector<unsigned int>& Ids,
+            unsigned int& currentpoint){
+
+            auto risultato = VerticesMap.try_emplace({P(0), P(1), P(2)}, currentpoint);
+            if(risultato.second){
+                unsigned int id = risultato.first->second;
+                Coordinates.col(id) = P;
+                Ids.push_back(id);
+                currentpoint++;
+                return true;
+            }
+            else return false;
+}
+
+// Funzione che prova ad aggiungere edges se non sono già presenti
+bool AggiungiEdge(const unsigned int id_P, 
+        const unsigned int id_Q, 
+        map<pair<unsigned int, unsigned int>, unsigned int>& EdgesMap,
+        MatrixXi& Extrema,
+        vector<unsigned int>& Ids, 
+        unsigned int& currentedge){
+        
+        auto risultato = EdgesMap.try_emplace({min(id_P, id_Q), max(id_P, id_Q)}, currentedge);
+        if(risultato.second){
+            Extrema(0, currentedge) = min(id_P, id_Q);
+            Extrema(1, currentedge) = max(id_P, id_Q);
+            Ids.push_back(currentedge);
+            currentedge++;
+            return true;
+        }
+        else return false;
+}
+
+// Funzione che aggiunge le facce sia etichettate per vertici che per edges: prova ad aggiungere faccia per vertici, se successo allora recupera
+// gli id dei lati corrispondenti dalla mappa EdgesMap e aggiunge anche la faccia per lati, poi incrementa il contatore una volta sola
+bool AggiungiFaccia(const unsigned int id_A, 
+    const unsigned int id_B, 
+    const unsigned int id_C,
+    map<array<unsigned int, 3>, unsigned int>& FacesVerticesMap,
+    const map<pair<unsigned int, unsigned int>, unsigned int>& EdgesMap,
+    vector<unsigned int>& Ids,
+    vector<vector<unsigned int>>& FacesVertices,
+    vector<vector<unsigned int>>& FacesEdges,
+    unsigned int& currentface){
+        array<unsigned int, 3> faccia = {id_A, id_B, id_C};
+        sort(faccia.begin(), faccia.end()); // sort ordina in modo crescente, prende in input due puntatori, uno al primo e uno dopo l'ultimo elemento
+        auto risultato = FacesVerticesMap.try_emplace(faccia, currentface);
+        if(risultato.second){
+            vector<unsigned int> face(faccia.begin(), faccia.end());    // Converto in vector perché FacesVertices contiene vectors
+            FacesVertices.push_back(face);
+            unsigned int id_AB = EdgesMap.at({min(id_A, id_B), max(id_A, id_B)});   // Uso .at() per l'accesso perché ho un const e non posso usare []
+            unsigned int id_BC = EdgesMap.at({min(id_C, id_B), max(id_C, id_B)});
+            unsigned int id_CA = EdgesMap.at({min(id_A, id_C), max(id_A, id_C)});
+            FacesEdges.push_back({id_AB, id_BC, id_CA});
+            Ids.push_back(currentface);
+            currentface++;
+            return true;
+        }
+        else return false;
+}
 
 
 // Funzione di triangolazione del poliedro tipo I
 // generiamo uno spazio convesso tramite la combinazione convessa aA+bB+cC, con a+b+c=1, A,B,C vertici del triangolo della faccia
 // la combinazione convessa viene discretizzata per generare (b+1)(b+2)/2 punti, dividendo la combinazione per b: (i/b)*A+(j/b)*B+(b-i-j/b)*C, i+j<=b
-
 
 namespace PolyhedraLibrary{
 
@@ -82,7 +138,6 @@ PolyhedraMesh TriangolazioneI(PolyhedraMesh& mesh, unsigned int b)
         NewCell0DsCoordinates(2, i) = mesh.Cell0DsCoordinates(2, i);
     }
 
-
     MatrixXi NewCell1DsExtrema = MatrixXi::Zero(2, NewNumEdges);
 
     // currentpoint segna a quale punto siamo arrivati, Id serve ad assegnare il corretto id ad ogni punto e Nuovo specifica se il punto esiste già o meno
@@ -96,9 +151,7 @@ PolyhedraMesh TriangolazioneI(PolyhedraMesh& mesh, unsigned int b)
 
     map<pair<unsigned int, unsigned int>, unsigned int> edgeMap;
 
-
     bool Nuovo = true;
-
 
     vector<vector<unsigned int>> NewFacesVertices;
     vector<vector<unsigned int>> NewFacesEdges;
@@ -183,8 +236,6 @@ PolyhedraMesh TriangolazioneI(PolyhedraMesh& mesh, unsigned int b)
                     // perché NewFacesVertices è un vector<vector<unsigned int>>
                     NewFacesVertices.push_back({static_cast<unsigned int>(v1), static_cast<unsigned int>(v2), static_cast<unsigned int>(v3)});
                     NewCell3DsFaces.push_back(Id_faccia++);
-
-
 
                     // Il check di esistenza degli edge ora avviene con dizionari: il dizionario è del tipo {v1, v2} : Id_edge, viene fatto 
                     // per ogni combinazione possibile {v1, v2}, {v2, v3}, {v3, v1}
@@ -365,27 +416,22 @@ PolyhedraMesh TriangolazioneII(PolyhedraMesh& mesh, unsigned int b){
         Vector3d P = mesh.Cell0DsCoordinates.col(mesh.Cell1DsExtrema(0,n));
         Vector3d Q = mesh.Cell0DsCoordinates.col(mesh.Cell1DsExtrema(1,n));
         EdgesOriginali.push_back({P,Q});
-        cout << "Aggiunto lato originale " << n << ": " << min(mesh.Cell1DsExtrema(0, n), mesh.Cell1DsExtrema(1, n)) << ", " << max(mesh.Cell1DsExtrema(0, n), mesh.Cell1DsExtrema(1, n)) << endl;
     }
-
 
     // Tetraedro
     if(mesh.NumCell0Ds == 4){ 
-        // NewNumV = 6*b*b + 6*b + 2; // numero di vertici DI TUTTO IL TETRAEDRO 
         NewNumV = 6*b*b + 6*b + 2;
-        NewNumE = 18*b*b; // numero di edges DI TUTTO IL POLIEDRO
+        NewNumE = 18*b*b + 18*b + 2 + 100;
     }
-    
     // Ottaedro
     if(mesh.NumCell0Ds == 6){
-        NewNumV = 12*b*b + 2;
-        NewNumE = 36*b*b; 
+        NewNumV = 12*b*b + 12*b + 2;
+        NewNumE = 36*b*b + 36*b + 2 + 100; 
     }
-
     // Icosaedro
     if(mesh.NumCell0Ds == 12){
-        NewNumV = 30*b*b + 2;
-        NewNumE = 90*b*b;
+        NewNumV = 30*b*b + 30*b + 2;
+        NewNumE = 90*b*b + 90*b + 2 + 100;
     }
 
 
@@ -394,97 +440,217 @@ PolyhedraMesh TriangolazioneII(PolyhedraMesh& mesh, unsigned int b){
     
     TriangolazioneI(mesh, b);
     unsigned int currentpoint = mesh.NumCell0Ds;
+    unsigned int currentedge = 0;
+    unsigned int currentface = 0;
 
-    // Usiamo un dizionario per verificare se il punto esiste già o meno
+    // Usiamo dizionari per verificare se gli elementi esistono già, le chiavi sono le coordinate o gli id di origine e fine o gli id 
+    // caratteristici di una faccia, così da poter scorrerle rapidamente con try_emplace per verificare duplicati, e i valori sono gli id
     map<array<double, 3>, unsigned int> VerticesMap;
+    map<pair<unsigned int, unsigned int>, unsigned int> EdgesMap;
+    map<array<double, 3>, unsigned int> MidToBar;
+    map<array<unsigned int, 3>, unsigned int> FacesVerticesMap; // Usiamo mappa solo basata su Id di vertici perché da questi risaliamo a edges
+    bool UnireBar;
 
     // conservativeResize aumenta la dimensione mantenendo gli elementi già presenti (i punti della triangolazione I)
     mesh.Cell0DsCoordinates.conservativeResize(3, NewNumV);
-    cout << "Dimensioni matrice di coordinate: " << mesh.Cell0DsCoordinates.rows() << " x " << mesh.Cell0DsCoordinates.cols() << "\n" << endl;
+    MatrixXi NewCell1DsExtrema = MatrixXi::Zero(2, NewNumE);
+    vector<unsigned int> NewCell1DsId;
+    vector<unsigned int> NewCell2DsId;
+    vector<vector<unsigned int>> NewFacesVertices;
+    vector<vector<unsigned int>> NewFacesEdges;
 
 
     for(const auto& faccia : mesh.Cell2DsVertices){
         
         Vector3d A = mesh.Cell0DsCoordinates.col(faccia[0]);
         VerticesMap.try_emplace({A(0), A(1), A(2)}, faccia[0]);  // try_emplace verifica se è già esistente la chiave, altrimenti inserisce coppia chiave-valore
-        //if(VerticesMap.try_emplace({A(0), A(1), A(2)}, faccia[0]).second){
-        //  cout << "Inserito punto " << faccia[0] << " di coordinate: (" << A(0) << ", " << A(1) << ", " << A(2) << ")" << endl;}
+        unsigned int id_A = VerticesMap[{A(0), A(1), A(2)}];
         
         Vector3d B = mesh.Cell0DsCoordinates.col(faccia[1]);
         VerticesMap.try_emplace({B(0), B(1), B(2)}, faccia[1]);
-        //if(VerticesMap.try_emplace({B(0), B(1), B(2)}, faccia[1]).second)
-        //{cout << "Inserito punto " << faccia[1] << " di coordinate: (" << B(0) << ", " << B(1) << ", " << B(2) << ")" << endl;}
+        unsigned int id_B = VerticesMap[{B(0), B(1), B(2)}];
 
         Vector3d C = mesh.Cell0DsCoordinates.col(faccia[2]);
         VerticesMap.try_emplace({C(0), C(1), C(2)}, faccia[2]);
-        //if(VerticesMap.try_emplace({C(0), C(1), C(2)}, faccia[2]).second)
-        //{cout << "Inserito punto " << faccia[2] << " di coordinate: (" << C(0) << ", " << C(1) << ", " << C(2) << ")"<< endl;} 
+        unsigned int id_C = VerticesMap[{C(0), C(1), C(2)}];
 
 
         // Calcolo punti medi dei lati e baricentro e provo a inserirli nella mappa, se riesco a inserirli allora sono nuovi punti e
         // incremento il contatore currentpoint, gli ID dei punti della nuova triangolazione saranno tutti maggiori degli ID dei precedenti
         // poiché currentpoint parte dall'ultimo Id della triangolazione I
 
-        Vector3d m_AB = (A+B)/2;
-
+        // Non controllo se il baricentro esiste già perché è sempre interno al triangolo quindi mai in comune
+        Vector3d baricentro = (A+B+C)/3;
+        unsigned int id_bar;
+        bool aggiunto = AggiungiVertice(baricentro, VerticesMap, mesh.Cell0DsCoordinates, mesh.Cell0DsId, currentpoint);
+        if(aggiunto) id_bar = currentpoint - 1;
+        else id_bar = VerticesMap[{baricentro(0), baricentro(1), baricentro(2)}];
+        AggiungiEdge(id_bar, id_A, EdgesMap, NewCell1DsExtrema, NewCell1DsId, currentedge);
+        AggiungiEdge(id_bar, id_B, EdgesMap, NewCell1DsExtrema, NewCell1DsId, currentedge);
+        AggiungiEdge(id_bar, id_C, EdgesMap, NewCell1DsExtrema, NewCell1DsId, currentedge);
+        
         // Per verificare se un punto va aggiunto o meno, verifico se giace su un edge presente all'inizio, in tal caso lo aggiungo, 
         // altrimenti si tratta di un punto interno non presente nella triangolazione II
 
+        Vector3d m_AB = (A+B)/2;
+        UnireBar = true;
         for(const auto& edge : EdgesOriginali){
             if(PuntoSuSpigolo(edge.first, edge.second, m_AB)){
-                auto risultato = VerticesMap.try_emplace({m_AB(0), m_AB(1), m_AB(2)}, currentpoint);
-                if(risultato.second){
-                    cout << "Punto medio del lato: " << faccia[0] << ", " << faccia[1] << " inserito: (" << m_AB(0) << ", " << m_AB(1) << ", " << m_AB(2) << ")\n" << endl;
-                    unsigned int id = risultato.first->second;
-                    mesh.Cell0DsCoordinates.col(id) = m_AB; 
-                    mesh.Cell0DsId.push_back(id);
-                    currentpoint++; 
-                }
+                unsigned int id = currentpoint;
+                aggiunto = AggiungiVertice(m_AB, VerticesMap, mesh.Cell0DsCoordinates, mesh.Cell0DsId, currentpoint);
+                if(!aggiunto) id = VerticesMap[{m_AB(0), m_AB(1), m_AB(2)}];
+
+                AggiungiEdge(id, id_A, EdgesMap, NewCell1DsExtrema, NewCell1DsId, currentedge);
+                AggiungiEdge(id, id_B, EdgesMap, NewCell1DsExtrema, NewCell1DsId, currentedge);
+                AggiungiEdge(id, id_bar, EdgesMap, NewCell1DsExtrema, NewCell1DsId, currentedge);
+
+                AggiungiFaccia(id, id_A, id_bar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+                AggiungiFaccia(id, id_B, id_bar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+
+                UnireBar = false;
                 break;  // Se il punto va aggiunto, smetto di verificare se vada aggiunto
             }
         }
 
+        // Questi if si occupano di gestire l'unione tra due baricentri di facce vicine, questo accade se il lato in comune è un lato interno
+        // e non uno degli spigoli originali. In tal caso, non viene aggiunto il punto medio di quel lato, e viene salvata in un dizionario la 
+        // chiave {coordinate punto medio} con valore id_baricentro della faccia. Se provando ad inserire le coordinate del punto medio vedo che
+        // in realtà esse sono già nel dizionario, vuol dire che ho già provato ad aggiungere il punto medio da un'altra faccia (comunicante), quindi che nel dizionario
+        // la coppia è già presente ma ha come valore il baricentro di quest'altra faccia. Devo quindi recuperare gli id dei due baricentri, id_bar e id_altrobar
+        // e creare l'edge tra i due.
+    
+        if(UnireBar){
+            auto risultato = MidToBar.try_emplace({m_AB(0), m_AB(1), m_AB(2)}, id_bar);
+            if(!risultato.second){
+                unsigned int id_altrobar = MidToBar[{m_AB(0), m_AB(1), m_AB(2)}];
+                if(AggiungiEdge(id_bar, id_altrobar, EdgesMap, NewCell1DsExtrema, NewCell1DsId, currentedge)){
+
+        // Se ho creato l'edge con successo, devo creare le facce che hanno come vertici i due baricentri e un terzo punto, che sarà un punto della faccia di partenza.
+        // Le facce saranno due e condivideranno un lato, per cui ci sarà un vertice della faccia di partenza da escludere: per capire quale, 
+        // guardo quale vertice è allineato ad entrambi i baricentri e lo escludo, dopodiché aggiungo le facce composte dai due baricentri e dai punti rimasti. 
+
+                    if(PuntoSuSpigolo(A, m_AB, baricentro) || PuntoSuSpigolo(A, baricentro, m_AB)){
+                        AggiungiFaccia(id_bar, id_B, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+                        AggiungiFaccia(id_bar, id_C, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+                    }
+                    else if(PuntoSuSpigolo(B, m_AB, baricentro) || PuntoSuSpigolo(B, baricentro, m_AB)){
+                        AggiungiFaccia(id_bar, id_A, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+                        AggiungiFaccia(id_bar, id_C, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+                    }
+                    else if(PuntoSuSpigolo(C, m_AB, baricentro) || PuntoSuSpigolo(C, baricentro, m_AB)){
+                        AggiungiFaccia(id_bar, id_A, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+                        AggiungiFaccia(id_bar, id_B, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+                    }
+                }
+            }
+        }
+
         Vector3d m_BC = (B+C)/2;
+        UnireBar = true;
         for(const auto& edge : EdgesOriginali){
             if(PuntoSuSpigolo(edge.first, edge.second, m_BC)){
-                auto risultato = VerticesMap.try_emplace({m_BC(0), m_BC(1), m_BC(2)}, currentpoint);
-                if(risultato.second){
-                    cout << "Punto medio del lato: " << faccia[1] << ", " << faccia[2] << " inserito: (" << m_BC(0) << ", " << m_BC(1) << ", " << m_BC(2) << ")\n" << endl;
-                    unsigned int id = risultato.first->second;
-                    mesh.Cell0DsCoordinates.col(id) = m_BC; 
-                    mesh.Cell0DsId.push_back(id);
-                    currentpoint++; 
-                }
+                unsigned int id = currentpoint;
+                aggiunto = AggiungiVertice(m_BC, VerticesMap, mesh.Cell0DsCoordinates, mesh.Cell0DsId, currentpoint);
+                if(!aggiunto) id = VerticesMap[{m_BC(0), m_BC(1), m_BC(2)}];
+
+                AggiungiEdge(id, id_B, EdgesMap, NewCell1DsExtrema, NewCell1DsId, currentedge);
+                AggiungiEdge(id, id_C, EdgesMap, NewCell1DsExtrema, NewCell1DsId, currentedge);
+                AggiungiEdge(id, id_bar, EdgesMap, NewCell1DsExtrema, NewCell1DsId, currentedge);
+
+                AggiungiFaccia(id, id_C, id_bar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+                AggiungiFaccia(id, id_B, id_bar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+
+                UnireBar = false;
                 break;
+            }
+        }
+
+        if(UnireBar){
+            auto risultato = MidToBar.try_emplace({m_BC(0), m_BC(1), m_BC(2)}, id_bar);
+            if(!risultato.second){
+                unsigned int id_altrobar = MidToBar[{m_BC(0), m_BC(1), m_BC(2)}];
+                if(AggiungiEdge(id_bar, id_altrobar, EdgesMap, NewCell1DsExtrema, NewCell1DsId, currentedge)){
+                    if(PuntoSuSpigolo(A, m_BC, baricentro) || PuntoSuSpigolo(A, baricentro, m_BC)){
+                        AggiungiFaccia(id_bar, id_B, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+                        AggiungiFaccia(id_bar, id_C, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+                    }
+                    else if(PuntoSuSpigolo(B, m_BC, baricentro) || PuntoSuSpigolo(B, baricentro, m_BC)){
+                        AggiungiFaccia(id_bar, id_A, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+                        AggiungiFaccia(id_bar, id_C, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+                    }
+                    else if(PuntoSuSpigolo(C, m_BC, baricentro) || PuntoSuSpigolo(C, baricentro, m_BC)){
+                        AggiungiFaccia(id_bar, id_A, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+                        AggiungiFaccia(id_bar, id_B, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+                    }
+                }
             }
         }
 
         Vector3d m_CA = (C+A)/2;
+        UnireBar = true;
         for(const auto& edge : EdgesOriginali){
             if(PuntoSuSpigolo(edge.first, edge.second, m_CA)){
-                auto risultato = VerticesMap.try_emplace({m_CA(0), m_CA(1), m_CA(2)}, currentpoint);
-                if(risultato.second){
-                    cout << "Punto medio del lato: " << faccia[2] << ", " << faccia[0] << " inserito: ("<< m_CA(0) << ", " << m_CA(1) << ", " << m_CA(2) << ")\n" << endl;
-                    unsigned int id = risultato.first->second;
-                    mesh.Cell0DsCoordinates.col(id) = m_CA; 
-                    mesh.Cell0DsId.push_back(id);
-                    currentpoint++; 
-                }
+                unsigned int id = currentpoint;
+                aggiunto = AggiungiVertice(m_CA, VerticesMap, mesh.Cell0DsCoordinates, mesh.Cell0DsId, currentpoint);
+                if(!aggiunto) id = VerticesMap[{m_CA(0), m_CA(1), m_CA(2)}];
+                    
+                AggiungiEdge(id, id_C, EdgesMap, NewCell1DsExtrema, NewCell1DsId, currentedge);
+                AggiungiEdge(id, id_A, EdgesMap, NewCell1DsExtrema, NewCell1DsId, currentedge);
+                AggiungiEdge(id, id_bar, EdgesMap, NewCell1DsExtrema, NewCell1DsId, currentedge);
+
+                AggiungiFaccia(id, id_A, id_bar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+                AggiungiFaccia(id, id_C, id_bar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+
+                UnireBar = false;
                 break;
             }
         }
 
-        // Non controllo se il baricentro esiste già perché è sempre interno al triangolo quindi mai in comune
-        Vector3d baricentro = (A+B+C)/3;
-        VerticesMap[{baricentro(0), baricentro(1), baricentro(2)}] = currentpoint;
-        mesh.Cell0DsCoordinates.col(VerticesMap[{baricentro(0), baricentro(1), baricentro(2)}]) = baricentro;
-        cout << "Baricentro della faccia " << faccia[0] << ", " << faccia[1] << ", " << faccia[2] << " inserito: (" << baricentro(0) << ", " << baricentro(1) << ", " << baricentro(2) << ")\n" << endl;
-        mesh.Cell0DsId.push_back(VerticesMap[{baricentro(0), baricentro(1), baricentro(2)}]);
-        currentpoint++;
-        
+        if(UnireBar){
+            auto risultato = MidToBar.try_emplace({m_CA(0), m_CA(1), m_CA(2)}, id_bar);
+            if(!risultato.second){
+                unsigned int id_altrobar = MidToBar[{m_CA(0), m_CA(1), m_CA(2)}];
+                if(AggiungiEdge(id_bar, id_altrobar, EdgesMap, NewCell1DsExtrema, NewCell1DsId, currentedge)){
+                    if(PuntoSuSpigolo(A, m_CA, baricentro) || PuntoSuSpigolo(A, baricentro, m_CA)){
+                        AggiungiFaccia(id_bar, id_B, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+                        AggiungiFaccia(id_bar, id_C, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+                    }
+                    else if(PuntoSuSpigolo(B, m_CA, baricentro) || PuntoSuSpigolo(B, baricentro, m_CA)){
+                        AggiungiFaccia(id_bar, id_A, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+                        AggiungiFaccia(id_bar, id_C, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+                    }
+                    else if(PuntoSuSpigolo(C, m_CA, baricentro) || PuntoSuSpigolo(C, baricentro, m_CA)){
+                        AggiungiFaccia(id_bar, id_A, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+                        AggiungiFaccia(id_bar, id_B, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+                    }
+                }
+            }
+        }
     }
 
     mesh.NumCell0Ds = currentpoint;
+    mesh.NumCell1Ds = currentedge;
+    mesh.NumCell2Ds = currentface;
+
+    // Per difficoltà nelle formule di calcolo degli edges del poliedro triangolato, uso una dimensione più ampia di default e poi "taglio" tenendo solo le colonne necessarie
+    mesh.Cell1DsExtrema = NewCell1DsExtrema.leftCols(currentedge);
+    mesh.Cell1DsId = NewCell1DsId;
+
+    mesh.Cell2DsId = NewCell2DsId;
+    mesh.Cell2DsEdges = NewFacesEdges;
+    mesh.Cell2DsVertices = NewFacesVertices;
+
+    vector<unsigned int> NewCell2DsNum(currentface, 3); 
+    mesh.Cell2DsNumEdges = NewCell2DsNum;
+    mesh.Cell2DsNumVertices = NewCell2DsNum;
+
+    mesh.Cell3DsVertices = mesh.Cell0DsId;
+    mesh.Cell3DsEdges = mesh.Cell1DsId;
+    mesh.Cell3DsFaces = mesh.Cell2DsId;
+
+    mesh.Cell3DsNumVertices = currentpoint;
+    mesh.Cell3DsNumEdges = currentedge;
+    mesh.Cell3DsNumFaces = currentface;
 
 
     return mesh;
