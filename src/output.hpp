@@ -4,6 +4,7 @@
 #include <string> 
 #include "PolyhedraMesh.hpp" 
 
+using namespace PolyhedraLibrary;
 using namespace std;
 using namespace Eigen;
 using namespace PolyhedraLibrary;
