@@ -376,135 +376,80 @@ PolyhedraMesh TriangolazioneII(PolyhedraMesh& mesh, unsigned int b){
         // altrimenti si tratta di un punto interno non presente nella triangolazione II
 
         Vector3d m_AB = (A+B)/2;
-        UnireBar = true;
-        for(const auto& edge : EdgesOriginali){
-            if(PuntoSuSpigolo(edge.first, edge.second, m_AB)){
-                unsigned int id = currentpoint;
-                aggiunto = AggiungiVertice(m_AB, VerticesMap, mesh.Cell0DsCoordinates, mesh.Cell0DsId, currentpoint);
-                if(!aggiunto) id = VerticesMap[{m_AB(0), m_AB(1), m_AB(2)}];
-
-                AggiungiEdge(id, id_A, EdgesMap, NewCell1DsExtrema, NewCell1DsId, currentedge);
-                AggiungiEdge(id, id_B, EdgesMap, NewCell1DsExtrema, NewCell1DsId, currentedge);
-                AggiungiEdge(id, id_bar, EdgesMap, NewCell1DsExtrema, NewCell1DsId, currentedge);
-
-                AggiungiFaccia(id, id_A, id_bar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
-                AggiungiFaccia(id, id_B, id_bar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
-
-                UnireBar = false;
-                break;  // Se il punto va aggiunto, smetto di verificare se vada aggiunto
-            }
-        }
-
-        // Questi if si occupano di gestire l'unione tra due baricentri di facce vicine, questo accade se il lato in comune è un lato interno
-        // e non uno degli spigoli originali. In tal caso, non viene aggiunto il punto medio di quel lato, e viene salvata in un dizionario la 
-        // chiave {coordinate punto medio} con valore id_baricentro della faccia. Se provando ad inserire le coordinate del punto medio vedo che
-        // in realtà esse sono già nel dizionario, vuol dire che ho già provato ad aggiungere il punto medio da un'altra faccia (comunicante), quindi che nel dizionario
-        // la coppia è già presente ma ha come valore il baricentro di quest'altra faccia. Devo quindi recuperare gli id dei due baricentri, id_bar e id_altrobar
-        // e creare l'edge tra i due.
-    
-        if(UnireBar){
-            auto risultato = MidToBar.try_emplace({m_AB(0), m_AB(1), m_AB(2)}, id_bar);
-            if(!risultato.second){
-                unsigned int id_altrobar = MidToBar[{m_AB(0), m_AB(1), m_AB(2)}];
-                if(AggiungiEdge(id_bar, id_altrobar, EdgesMap, NewCell1DsExtrema, NewCell1DsId, currentedge)){
-
-        // Se ho creato l'edge con successo, devo creare le facce che hanno come vertici i due baricentri e un terzo punto, che sarà un punto della faccia di partenza.
-        // Le facce saranno due e condivideranno un lato, per cui ci sarà un vertice della faccia di partenza da escludere: per capire quale, 
-        // guardo quale vertice è allineato ad entrambi i baricentri e lo escludo, dopodiché aggiungo le facce composte dai due baricentri e dai punti rimasti. 
-
-                    if(PuntoSuSpigolo(A, m_AB, baricentro) || PuntoSuSpigolo(A, baricentro, m_AB)){
-                        AggiungiFaccia(id_bar, id_B, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
-                        AggiungiFaccia(id_bar, id_C, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
-                    }
-                    else if(PuntoSuSpigolo(B, m_AB, baricentro) || PuntoSuSpigolo(B, baricentro, m_AB)){
-                        AggiungiFaccia(id_bar, id_A, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
-                        AggiungiFaccia(id_bar, id_C, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
-                    }
-                    else if(PuntoSuSpigolo(C, m_AB, baricentro) || PuntoSuSpigolo(C, baricentro, m_AB)){
-                        AggiungiFaccia(id_bar, id_A, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
-                        AggiungiFaccia(id_bar, id_B, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
-                    }
-                }
-            }
-        }
-
         Vector3d m_BC = (B+C)/2;
-        UnireBar = true;
-        for(const auto& edge : EdgesOriginali){
-            if(PuntoSuSpigolo(edge.first, edge.second, m_BC)){
-                unsigned int id = currentpoint;
-                aggiunto = AggiungiVertice(m_BC, VerticesMap, mesh.Cell0DsCoordinates, mesh.Cell0DsId, currentpoint);
-                if(!aggiunto) id = VerticesMap[{m_BC(0), m_BC(1), m_BC(2)}];
+        Vector3d m_CA = (C+A)/2;
+        array<Vector3d, 3> midpoints = {m_AB, m_BC, m_CA};
 
-                AggiungiEdge(id, id_B, EdgesMap, NewCell1DsExtrema, NewCell1DsId, currentedge);
-                AggiungiEdge(id, id_C, EdgesMap, NewCell1DsExtrema, NewCell1DsId, currentedge);
-                AggiungiEdge(id, id_bar, EdgesMap, NewCell1DsExtrema, NewCell1DsId, currentedge);
+        for(auto& m : midpoints){
+            
+            UnireBar = true;
+            for(const auto& edge : EdgesOriginali){
+                if(PuntoSuSpigolo(edge.first, edge.second, m)){
+                    unsigned int id = currentpoint;
+                    aggiunto = AggiungiVertice(m, VerticesMap, mesh.Cell0DsCoordinates, mesh.Cell0DsId, currentpoint);
+                    if(!aggiunto) id = VerticesMap[{m(0), m(1), m(2)}];
 
-                AggiungiFaccia(id, id_C, id_bar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
-                AggiungiFaccia(id, id_B, id_bar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+                    if(PuntoSuSpigolo(A, B, m)){
+                        AggiungiEdge(id, id_A, EdgesMap, NewCell1DsExtrema, NewCell1DsId, currentedge);
+                        AggiungiEdge(id, id_B, EdgesMap, NewCell1DsExtrema, NewCell1DsId, currentedge);
+                        AggiungiEdge(id, id_bar, EdgesMap, NewCell1DsExtrema, NewCell1DsId, currentedge);
 
-                UnireBar = false;
-                break;
-            }
-        }
-
-        if(UnireBar){
-            auto risultato = MidToBar.try_emplace({m_BC(0), m_BC(1), m_BC(2)}, id_bar);
-            if(!risultato.second){
-                unsigned int id_altrobar = MidToBar[{m_BC(0), m_BC(1), m_BC(2)}];
-                if(AggiungiEdge(id_bar, id_altrobar, EdgesMap, NewCell1DsExtrema, NewCell1DsId, currentedge)){
-                    if(PuntoSuSpigolo(A, m_BC, baricentro) || PuntoSuSpigolo(A, baricentro, m_BC)){
-                        AggiungiFaccia(id_bar, id_B, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
-                        AggiungiFaccia(id_bar, id_C, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+                        AggiungiFaccia(id, id_A, id_bar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+                        AggiungiFaccia(id, id_B, id_bar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
                     }
-                    else if(PuntoSuSpigolo(B, m_BC, baricentro) || PuntoSuSpigolo(B, baricentro, m_BC)){
-                        AggiungiFaccia(id_bar, id_A, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
-                        AggiungiFaccia(id_bar, id_C, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+
+                    if(PuntoSuSpigolo(B, C, m)){
+                        AggiungiEdge(id, id_B, EdgesMap, NewCell1DsExtrema, NewCell1DsId, currentedge);
+                        AggiungiEdge(id, id_C, EdgesMap, NewCell1DsExtrema, NewCell1DsId, currentedge);
+                        AggiungiEdge(id, id_bar, EdgesMap, NewCell1DsExtrema, NewCell1DsId, currentedge);
+
+                        AggiungiFaccia(id, id_C, id_bar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+                        AggiungiFaccia(id, id_B, id_bar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
                     }
-                    else if(PuntoSuSpigolo(C, m_BC, baricentro) || PuntoSuSpigolo(C, baricentro, m_BC)){
-                        AggiungiFaccia(id_bar, id_A, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
-                        AggiungiFaccia(id_bar, id_B, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+
+                    if(PuntoSuSpigolo(C, A, m)){
+                        AggiungiEdge(id, id_C, EdgesMap, NewCell1DsExtrema, NewCell1DsId, currentedge);
+                        AggiungiEdge(id, id_A, EdgesMap, NewCell1DsExtrema, NewCell1DsId, currentedge);
+                        AggiungiEdge(id, id_bar, EdgesMap, NewCell1DsExtrema, NewCell1DsId, currentedge);
+
+                        AggiungiFaccia(id, id_A, id_bar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+                        AggiungiFaccia(id, id_C, id_bar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
                     }
+
+                    UnireBar = false;
+                    break;  // Se il punto va aggiunto, smetto di verificare se vada aggiunto
                 }
             }
-        }
 
-        Vector3d m_CA = (C+A)/2;
-        UnireBar = true;
-        for(const auto& edge : EdgesOriginali){
-            if(PuntoSuSpigolo(edge.first, edge.second, m_CA)){
-                unsigned int id = currentpoint;
-                aggiunto = AggiungiVertice(m_CA, VerticesMap, mesh.Cell0DsCoordinates, mesh.Cell0DsId, currentpoint);
-                if(!aggiunto) id = VerticesMap[{m_CA(0), m_CA(1), m_CA(2)}];
-                    
-                AggiungiEdge(id, id_C, EdgesMap, NewCell1DsExtrema, NewCell1DsId, currentedge);
-                AggiungiEdge(id, id_A, EdgesMap, NewCell1DsExtrema, NewCell1DsId, currentedge);
-                AggiungiEdge(id, id_bar, EdgesMap, NewCell1DsExtrema, NewCell1DsId, currentedge);
+            // Questi if si occupano di gestire l'unione tra due baricentri di facce vicine, questo accade se il lato in comune è un lato interno
+            // e non uno degli spigoli originali. In tal caso, non viene aggiunto il punto medio di quel lato, e viene salvata in un dizionario la 
+            // chiave {coordinate punto medio} con valore id_baricentro della faccia. Se provando ad inserire le coordinate del punto medio vedo che
+            // in realtà esse sono già nel dizionario, vuol dire che ho già provato ad aggiungere il punto medio da un'altra faccia (comunicante), quindi che nel dizionario
+            // la coppia è già presente ma ha come valore il baricentro di quest'altra faccia. Devo quindi recuperare gli id dei due baricentri, id_bar e id_altrobar
+            // e creare l'edge tra i due.
+        
+            if(UnireBar){
+                auto risultato = MidToBar.try_emplace({m(0), m(1), m(2)}, id_bar);
+                if(!risultato.second){
+                    unsigned int id_altrobar = MidToBar[{m(0), m(1), m(2)}];
+                    if(AggiungiEdge(id_bar, id_altrobar, EdgesMap, NewCell1DsExtrema, NewCell1DsId, currentedge)){
 
-                AggiungiFaccia(id, id_A, id_bar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
-                AggiungiFaccia(id, id_C, id_bar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+            // Se ho creato l'edge con successo, devo creare le facce che hanno come vertici i due baricentri e un terzo punto, che sarà un punto della faccia di partenza.
+            // Le facce saranno due e condivideranno un lato, per cui ci sarà un vertice della faccia di partenza da escludere: per capire quale, 
+            // guardo quale vertice è allineato ad entrambi i baricentri e lo escludo, dopodiché aggiungo le facce composte dai due baricentri e dai punti rimasti. 
 
-                UnireBar = false;
-                break;
-            }
-        }
-
-        if(UnireBar){
-            auto risultato = MidToBar.try_emplace({m_CA(0), m_CA(1), m_CA(2)}, id_bar);
-            if(!risultato.second){
-                unsigned int id_altrobar = MidToBar[{m_CA(0), m_CA(1), m_CA(2)}];
-                if(AggiungiEdge(id_bar, id_altrobar, EdgesMap, NewCell1DsExtrema, NewCell1DsId, currentedge)){
-                    if(PuntoSuSpigolo(A, m_CA, baricentro) || PuntoSuSpigolo(A, baricentro, m_CA)){
-                        AggiungiFaccia(id_bar, id_B, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
-                        AggiungiFaccia(id_bar, id_C, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
-                    }
-                    else if(PuntoSuSpigolo(B, m_CA, baricentro) || PuntoSuSpigolo(B, baricentro, m_CA)){
-                        AggiungiFaccia(id_bar, id_A, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
-                        AggiungiFaccia(id_bar, id_C, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
-                    }
-                    else if(PuntoSuSpigolo(C, m_CA, baricentro) || PuntoSuSpigolo(C, baricentro, m_CA)){
-                        AggiungiFaccia(id_bar, id_A, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
-                        AggiungiFaccia(id_bar, id_B, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+                        if(PuntoSuSpigolo(A, m, baricentro) || PuntoSuSpigolo(A, baricentro, m)){
+                            AggiungiFaccia(id_bar, id_B, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+                            AggiungiFaccia(id_bar, id_C, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+                        }
+                        else if(PuntoSuSpigolo(B, m, baricentro) || PuntoSuSpigolo(B, baricentro, m)){
+                            AggiungiFaccia(id_bar, id_A, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+                            AggiungiFaccia(id_bar, id_C, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+                        }
+                        else if(PuntoSuSpigolo(C, m, baricentro) || PuntoSuSpigolo(C, baricentro, m)){
+                            AggiungiFaccia(id_bar, id_A, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+                            AggiungiFaccia(id_bar, id_B, id_altrobar, FacesVerticesMap, EdgesMap, NewCell2DsId, NewFacesVertices, NewFacesEdges, currentface);
+                        }
                     }
                 }
             }
