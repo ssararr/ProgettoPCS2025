@@ -17,20 +17,6 @@ using namespace std;
 using namespace Eigen;
 using namespace PolyhedraLibrary;
 
-//Definisco una struct per la definizione di punti 3d in cui è presente il costruttore e la funzione che calcola la distanza euclidea tra due punti 3D
-/*struct Point3D {
-    double x, y, z;
-
-    Point3D(double x_, double y_, double z_) : x(x_), y(y_), z(z_) {} // Costruttore per inizializzare le coordinate del punto
-
-    // Calcola la distanza euclidea tra questo punto e un altro
-    double distanceTo(const Point3D& other) const {
-        double dx = x - other.x;
-        double dy = y - other.y;
-        double dz = z - other.z;
-        return sqrt(dx*dx + dy*dy + dz*dz);
-    }
-};*/
 
 //definisco una funzione distanza che calcola la distanza euclidea tra due vettori di dimensione 3 che contengono le cooridnate x, y, z
 double distanceBtw(const vector<double>& point1, const vector<double>& point2) {
@@ -65,129 +51,103 @@ vector<vector<double>> eigenMatrixToVectorVector(const MatrixXd& matrix) {
         };
         result.push_back(point);
     }
+	return result;
 }
-
-/*if (matrix.rows() != 3) {
-        throw invalid_argument("La matrice deve avere 3 righe (x, y, z).");
-    }
-
-    vector<vector<double>> result;
-    result.reserve(matrix.cols());  // Numero di punti (colonne)
-
-    for (int i = 0; i < matrix.cols(); ++i) {
-        // Crea un vettore 3D direttamente dalle righe x, y, z della colonna i-esima
-        vector<double> point = {
-            matrix(0, i),  // x
-            matrix(1, i),  // y
-            matrix(2, i)   // z
-        };
-        result.push_back(point);
-    }
-
-    return result;
-}*/
-
-//Definisco la funzione findClosestDualVertices che prende in input i due vettori di punti3D che contengono
-// le coordinate dei vertici originali e dei vertici duali, e restituisce in output una mappa 
-// che associa ad ogni vertice originale gli indici dei vertici duali più vicini, entro una certa tolleranza.
-
-/*const vector<vector<double>>& originalVertices,
-    const vector<vector<double>>& dualVertices,
-    double tolerance 
-) {
-    map<int, vector<unsigned int>> vertexToDualMap; //definisco la mappa che vorrò in output
-
-    for (unsigned int i = 0; i < originalVertices.size(); ++i) {
-        const vector<double> original = originalVertices[i]; // Prendo il vertice originale corrente (oggetto Point3D)
-        double minDistance = numeric_limits<double>::max(); //inizializzo la minima distanza al valore massimo possibile, in modo tale che qualsiasi prima distanza misurata sia minore di quella inizializzata
-        vector<unsigned int> closestDualIndices; // Vettore per memorizzare gli indici dei vertici duali più vicini a questo vertice originale
-
-	//CONTROLLO DELLE DIMENSIONI DEI VERTICI PRIMA DEL RICHIAMO DI DISTANCE BETWEEN
-	for (unsigned int i = 0; i < originalVertices.size(); ++i) {
-		cout << "Vertice originale " << i << ": ";
-		for (double coord : originalVertices[i]) cout << coord << " ";
-		cout << endl;
-	}
-
-	for (unsigned int j = 0; j < dualVertices.size(); ++j) {
-		cout << "Vertice duale " << j << ": ";
-		for (double coord : dualVertices[j]) cout << coord << " ";
-			cout << endl;
-	}
-
-
-        // Trova la distanza minima per questo vertice originale
-        for (unsigned int j = 0; j < dualVertices.size(); ++j) {
-            double dist = distanceBtw(original, dualVertices[j]); //uso la funzione distanceTo della struct Point3D per calcolare la distanza tra il vertice originale e il vertice duale corrente
-            
-            if (dist < minDistance - tolerance) {
-                // Nuovo minimo trovato, resetto la lista e inserisco solo il nuovo vertice corrente
-                minDistance = dist;
-                closestDualIndices.clear();
-                closestDualIndices.push_back(j);
-            }
-            else if (abs(dist - minDistance) < tolerance) {
-                // Distanza equivalente al minimo, aggiungo alla lista tale vertice duale (poiché lavoriamo con poligoni regolari, il ruolo della tolleranza sarebbe evitabile, visto che tutti i vertici che cerchiamo avranno la stessa distanza minima da quello origianale. Valutare se eliminarla)
-                closestDualIndices.push_back(j);
-            }
-        }
-
-        vertexToDualMap[i] = closestDualIndices; // Associo l'indice del vertice originale agli indici dei vertici duali più vicini
-    }
-
-    return vertexToDualMap; //restituisco la mappa 
-}*/
 
 map<int, vector<unsigned int>> findClosestDualVertices(
     const vector<vector<double>>& originalVertices,
-    const vector<vector<double>>& dualVertices) 
+    const vector<vector<double>>& dualVertices,
+    unsigned int num_closest = 4) // Default a 4 (per cubo/ottaedro), passare 5 per dodecaedro/icosaedro
 {
-	double tolerance = 1e-6; // Definisco una tolleranza per considerare due distanze equivalenti (può essere modificata in base alle esigenze)
     map<int, vector<unsigned int>> vertexToDualMap;
 
-    // Verifica preliminare delle dimensioni
+    // Verifica preliminare
+    if (num_closest == 0) {
+        throw invalid_argument("num_closest deve essere almeno 1");
+    }
+
+    // Controlla che tutti i vertici siano 3D
     for (const auto& v : originalVertices) {
-        if (v.size() != 3) {
-            throw invalid_argument("Tutti i vertici originali devono essere 3D");
-        }
+        if (v.size() != 3) throw invalid_argument("Vertici originali devono essere 3D");
     }
     for (const auto& v : dualVertices) {
-        if (v.size() != 3) {
-            throw invalid_argument("Tutti i vertici duali devono essere 3D");
-        }
+        if (v.size() != 3) throw invalid_argument("Vertici duali devono essere 3D");
     }
 
+    // Prealloca memoria per le distanze
+    vector<pair<double, unsigned int>> distances;
+    distances.reserve(dualVertices.size());
+
     for (unsigned int i = 0; i < originalVertices.size(); ++i) {
-        const auto& original = originalVertices[i]; // [x,y,z]
-        double minDistance = numeric_limits<double>::max();
-        vector<unsigned int> closestDualIndices;
+        const auto& original = originalVertices[i];
+        distances.clear();
 
+        // Calcola tutte le distanze usando distanceBtw
         for (unsigned int j = 0; j < dualVertices.size(); ++j) {
-            const auto& dual = dualVertices[j]; // [x,y,z]
-            
-            // Calcolo distanza euclidea manuale (ottimizzato per 3D)
-            double dx = original[0] - dual[0];
-            double dy = original[1] - dual[1];
-            double dz = original[2] - dual[2];
-            double dist = sqrt(dx*dx + dy*dy + dz*dz);
-
-            if (dist < minDistance - tolerance) {
-                minDistance = dist;
-                closestDualIndices = {j}; // Sostituisci con nuovo minimo
-            } 
-            else if (abs(dist - minDistance) <= tolerance) {
-                closestDualIndices.push_back(j); // Aggiungi a minimi esistenti
-            }
+            const auto& dual = dualVertices[j];
+            double dist = distanceBtw(original, dual);
+            distances.emplace_back(dist, j);
         }
 
-        vertexToDualMap[i] = closestDualIndices;
+        // Seleziona i num_closest più vicini
+        unsigned int n = min(num_closest, static_cast<unsigned int>(distances.size()));
+        
+        // Ordina parzialmente per ottenere i primi n elementi
+        std::partial_sort(
+            distances.begin(), 
+            distances.begin() + n, 
+            distances.end(),
+            [](const auto& a, const auto& b) { return a.first < b.first; }
+        );
+
+        // Estrai gli indici
+        vector<unsigned int> closestIndices;
+        closestIndices.reserve(n);
+        for (unsigned int k = 0; k < n; ++k) {
+            closestIndices.push_back(distances[k].second);
+        }
+
+        vertexToDualMap[i] = closestIndices;
     }
 
     return vertexToDualMap;
 }
 
+/*map<int, vector<unsigned int>> findClosestDualVertices(
+    const vector<vector<double>>& originalVertices,
+    const vector<vector<double>>& dualVertices) 
+{
+	double tolerance = 1e-10; // Definisco una tolleranza per considerare due distanze equivalenti (può essere modificata in base alle esigenze)
+    map<int, vector<unsigned int>> vertexToDualMap;
 
+	for(auto& original : originalVertices){
 
+	}
+
+    for (unsigned int i = 0; i < originalVertices.size(); ++i) {
+        const auto& original = originalVertices[i]; // [x,y,z]
+        double minDistance = numeric_limits<double>::max();
+        vector<unsigned int> closestDualIds;
+
+        for (unsigned int j = 0; j < dualVertices.size(); ++j) {
+            const auto& dual = dualVertices[j]; // [x,y,z]
+            
+            double dist = distanceBtw(original, dual);
+
+            if (dist < minDistance - tolerance) {
+                minDistance = dist;
+                closestDualIds = {j}; // Sostituisci con nuovo minimo
+            } 
+            else if (abs(dist - minDistance) <= tolerance) {
+                closestDualIds.push_back(j); // Aggiungi a minimi esistenti
+            }
+        }
+
+        vertexToDualMap[i] = closestDualIds;
+    }
+
+    return vertexToDualMap;
+}*/
 
 
 namespace PolyhedraLibrary {
@@ -200,19 +160,16 @@ bool MeshDuale(PolyhedraMesh& mesh)
 		cerr << "Non sono presenti facce nella mesh." << endl;
 		return false;
 	}
-
-	//(inutile?)map<unsigned int, vector<double>> dualVertexToFace; //Mappa che associa ad ogni id di ogni faccia del poliedro iniziale le coordinate del suo baricentro (ovvero il nuovo vertice duale)
-	vector<unsigned int> NewCell0DsId(NumFaces); 	
+	vector<unsigned int> NewCell0DsId;
 	MatrixXd NewCell0DsCoordinates(3, NumFaces); // Inizializzo la matrice delle coordinate dei vertici duali
 
 	for (unsigned int faceID = 0; faceID < NumFaces; faceID++) {
-		//gestisci errore(?)
 		if (mesh.Cell2DsNumVertices[faceID] == 0) {
 			cerr << "La faccia faceID " << faceID << " non ha vertici." << endl;
 			return false;
 		}
 		Vector3d baricentro = Vector3d::Zero(); // Inizializzo il baricentro a zero
-		for (const auto& id_vertex : mesh.Cell2DsVertices[faceID]) {
+		for (const auto& id_vertex : mesh.Cell2DsVertices[faceID]) {	// [[0,]]
 			baricentro += mesh.Cell0DsCoordinates.col(id_vertex); // Sommo le coordinate dei vertici della faccia
 		}		
 		baricentro /= mesh.Cell2DsNumVertices[faceID]; // Calcolo il baricentro dividendo per il numero di vertici della faccia
@@ -220,8 +177,6 @@ bool MeshDuale(PolyhedraMesh& mesh)
 		NewCell0DsId.push_back(faceID); // Associo l'ID della faccia al nuovo vertice duale
 		//(inutile?) dualVertexToFace[faceID] = baricentro; // Associo il baricentro alla faccia
 	}
-	
-	
 	
 	
 	//UNISCO OGNI BARICENTRO (VERTICI DUALI) AI BARICENTRI DELLE FACCE ADIACENTI (RIEMPIO NewCell1DsId e NewCell1DsExtrema)
@@ -239,18 +194,20 @@ bool MeshDuale(PolyhedraMesh& mesh)
 	for (const auto& entry : edgeToFaces) {
 		const auto& facesSharingEdge = entry.second; //accedo alla lista di facce che condividono tale edge (chiave della mappa) 
 		if (facesSharingEdge.size() == 2) { // Se lo spigolo è condiviso da due facce
-			dualEdges.emplace_back(facesSharingEdge[0], facesSharingEdge[1]); // Aggiungo la coppia di ID delle facce come un nuovo spigolo duale
+			dualEdges.emplace_back(min(facesSharingEdge[0], facesSharingEdge[1]), max(facesSharingEdge[0], facesSharingEdge[1])); // Aggiungo la coppia di ID delle facce come un nuovo spigolo duale
 		}
 	}
 	
 	MatrixXi NewCell1DsExtrema(2, dualEdges.size()); // Inizializzo la matrice degli estremi degli spigoli duali
 	vector<unsigned int> NewCell1DsId(dualEdges.size()); // Vettore per gli ID degli spigoli duali
-	for (unsigned int i = 0; i < edgeToFaces.size(); ++i)
+	unsigned int edgeIndex = 0;
+	for (auto& entry : edgeToFaces)
 	{
-		const auto& edge = edgeToFaces[i]; // Prendo la coppia di facce che condividono lo spigolo
-		NewCell1DsExtrema(0, i) = edge[0]; // Assegno il primo ID della coppia come primo estremo dello spigolo duale
-		NewCell1DsExtrema(1, i) = edge[1]; // Assegno il secondo ID della coppia come secondo estremo dello spigolo duale
-		NewCell1DsId.push_back(i); // Aggiungo l'ID dello spigolo duale
+		auto& edge = entry.second;
+		NewCell1DsExtrema(0, edgeIndex) = edge[0]; // Assegno il primo ID della coppia come primo estremo dello spigolo duale
+		NewCell1DsExtrema(1, edgeIndex) = edge[1]; // Assegno il secondo ID della coppia come secondo estremo dello spigolo duale
+		NewCell1DsId.push_back(edgeIndex); // Aggiungo l'ID dello spigolo duale
+		edgeIndex++;
 	}
 
 
@@ -267,13 +224,83 @@ bool MeshDuale(PolyhedraMesh& mesh)
     cout << "Dimensioni NewCell0DsCoordinates: " << NewCell0DsCoordinates.rows() << "x" << NewCell0DsCoordinates.cols() << endl;
 
 
-
-	mappaVertexToDual = findClosestDualVertices(originalVertices, dualVertices); // Trovo i vertici duali più vicini per ogni vertice originale /*
+	unsigned int num_closest = 4;
+	mappaVertexToDual = findClosestDualVertices(originalVertices, dualVertices, num_closest); // Trovo i vertici duali più vicini per ogni vertice originale /*
 
 	vector<unsigned int> NewCell2DsId;
-	NewCell2DsId.reserve(mappaVertexToDual.size());
 	vector<vector<unsigned int>> NewCell2DsVertices;
-	NewCell2DsVertices.reserve(mappaVertexToDual.size()); // Riservo spazio per gli ID dei vertici duali più vicini per ogni vertice originale
+
+
+	vector<vector<unsigned int>> NewCell2DsVertices;
+	vector<unsigned int> NewCell2DsId;
+
+	// 1. Costruisci mappa vertex → facce che lo contengono
+	map<unsigned int, vector<unsigned int>> vertex_to_faces;
+
+	for (unsigned int f = 0; f < mesh.Cell2DsVertices.size(); ++f) {
+		for (unsigned int v : mesh.Cell2DsVertices[f]) {
+			vertex_to_faces[v].push_back(f);
+		}
+	}
+
+	// 2. Ordina ciclicamente i centroidi delle facce attorno a ciascun vertice
+	for (const auto& [v_idx, face_ids] : vertex_to_faces) {
+		const auto& origin = originalVertices[v_idx];
+		vector<pair<double, unsigned int>> angle_face_pairs;
+
+		// Calcolo normale media per costruire un piano locale
+		vector<double> normal(3, 0.0);
+
+		for (unsigned int f_id : face_ids) {
+			const auto& centroid = dualVertices[f_id];
+			normal[0] += (centroid[1] - origin[1]) * (centroid[2] - origin[2]);
+			normal[1] += (centroid[2] - origin[2]) * (centroid[0] - origin[0]);
+			normal[2] += (centroid[0] - origin[0]) * (centroid[1] - origin[1]);
+		}
+
+		// Vettori base locale ortogonali
+		vector<double> e1 = {1, 0, 0};
+		vector<double> e2 = {0, 1, 0};
+		if (normal[0] != 0 || normal[1] != 0 || normal[2] != 0) {
+			// ortonormalizzazione (semplificata)
+			double norm = std::sqrt(normal[0]*normal[0] + normal[1]*normal[1] + normal[2]*normal[2]);
+			for (int i = 0; i < 3; ++i) normal[i] /= norm;
+			e1 = {-normal[1], normal[0], 0}; // un vettore ortogonale (arbitrario)
+			double len = sqrt(e1[0]*e1[0] + e1[1]*e1[1]);
+			if (len > 1e-6)
+				for (int i = 0; i < 3; ++i) e1[i] /= len;
+			e2 = {
+				normal[1]*e1[2] - normal[2]*e1[1],
+				normal[2]*e1[0] - normal[0]*e1[2],
+				normal[0]*e1[1] - normal[1]*e1[0]
+			};
+		}
+
+		for (unsigned int f_id : face_ids) {
+			const auto& centroid = dualVertices[f_id];
+			std::vector<double> vec = {
+				centroid[0] - origin[0],
+				centroid[1] - origin[1],
+				centroid[2] - origin[2]
+			};
+			double x = vec[0]*e1[0] + vec[1]*e1[1] + vec[2]*e1[2];
+			double y = vec[0]*e2[0] + vec[1]*e2[1] + vec[2]*e2[2];
+			double angle = atan2(y, x);
+			angle_face_pairs.emplace_back(angle, f_id);
+		}
+
+		sort(angle_face_pairs.begin(), angle_face_pairs.end());
+
+		vector<unsigned int> ordered;
+		for (const auto& [angle, fid] : angle_face_pairs) {
+			ordered.push_back(fid);
+		}
+
+		NewCell2DsId.push_back(v_idx);
+		NewCell2DsVertices.push_back(ordered);
+	}
+
+
 	for (const auto& entry : mappaVertexToDual) { // Scorro la mappa dei vertici originali e i loro vertici duali più vicini
 		unsigned int originalVertexId = entry.first; // ID del vertice originale
 		const vector<unsigned int>& dualVertexIds = entry.second; // Indici dei vertici duali più vicini
@@ -281,49 +308,41 @@ bool MeshDuale(PolyhedraMesh& mesh)
 		NewCell2DsVertices.push_back(dualVertexIds); // Aggiungo gli ID dei vertici duali come un nuovo vettore di vertici per la faccia duale
 	}
 
-	vector<vector<unsigned int>> NewCell2DsEdges; 
-	NewCell2DsEdges.reserve(mappaVertexToDual.size()); // Riservo spazio per gli ID degli spigoli duali per ogni faccia duale
+	vector<vector<unsigned int>> NewCell2DsEdges(mappaVertexToDual.size()); // Inizializza correttamente
+
 	for (unsigned int i = 0; i < edgeToFaces.size(); ++i) //ogni i è un edge duale
 	{
 		const auto& edge = edgeToFaces[i]; // Prendo la coppia di facce che condividono lo spigolo
 		
-		for (unsigned int j = 0; j < mappaVertexToDual.size(); j++) //ogni j è una faccia duale
-		{
-			if (mappaVertexToDual[j].size() >= 2) { // Se ci sono almeno due vertici duali nella faccia duale
-				if (find(mappaVertexToDual[j].begin(), mappaVertexToDual[j].end(), edge[0]) != mappaVertexToDual[j].end() &&
-					find(mappaVertexToDual[j].begin(), mappaVertexToDual[j].end(), edge[1]) != mappaVertexToDual[j].end()) {			
-					NewCell2DsEdges[j].push_back(i); // Aggiungo lo spigolo duale i nella lista di spigoli della faccia duale j
-				}
-			}
+		unsigned int j = 0;
+		for (const auto& entry : mappaVertexToDual) {
+    		const auto& dualVerts = entry.second;
+    		if (dualVerts.size() >= 2) {
+        		if (find(dualVerts.begin(), dualVerts.end(), edge[0]) != dualVerts.end() &&
+            		find(dualVerts.begin(), dualVerts.end(), edge[1]) != dualVerts.end()) {
+            		NewCell2DsEdges[j].push_back(i); // i deve essere l'indice reale dello spigolo duale
+        		}
+   			 }
+    		++j;
 		}
 	}
 
-	
 	//RIEMPIO CELL0
 	mesh.NumCell0Ds = NumFaces; // Imposto il numero di celle 0D (vertici duali) uguale al numero di facce
-	//mesh.Cell0DsId.resize(NumFaces); // Riservo spazio per gli ID dei vertici duali
 	mesh.Cell0DsId = NewCell0DsId; // Assegno gli ID dei vertici duali al vettore degli ID dei vertici del poliedro duale
-	//mesh.Cell0DsCoordinates.resize(3, NumFaces); // Inizializzo la matrice delle coordinate dei vertici duali
 	mesh.Cell0DsCoordinates = NewCell0DsCoordinates; // Assegno le coordinate dei vertici duali alla matrice delle coordinate dei vertici del poliedro duale
 
 	//RIEMPIO CELL1
 	mesh.NumCell1Ds = edgeToFaces.size(); // Imposto il numero di celle 1D (spigoli duali) uguale al numero di spigoli duali
-	//mesh.Cell1DsId.resize(edgeToFaces.size()); // Riservo spazio per gli ID degli spigoli duali
 	mesh.Cell1DsId = NewCell1DsId; // Assegno gli ID degli spigoli duali al vettore degli ID degli spigoli del poliedro duale
-	//mesh.Cell1DsExtrema.resize(2, edgeToFaces.size()); // Inizializzo la matrice degli estremi degli spigoli duali
 	mesh.Cell1DsExtrema = NewCell1DsExtrema; // Assegno gli estremi degli spigoli duali alla matrice degli estremi degli spigoli del poliedro duale
 
 	//RIEMPIO CELL2
 	mesh.NumCell2Ds = mappaVertexToDual.size(); // Imposto il numero di celle 2D (facce duali) uguale al numero di vertici originali
-	//mesh.Cell2DsId.resize(mappaVertexToDual.size());
 	mesh.Cell2DsId = NewCell2DsId;
-	//mesh.Cell2DsVertices.resize(mappaVertexToDual.size());
 	mesh.Cell2DsVertices = NewCell2DsVertices;
-	//mesh.Cell2DsEdges.resize(mappaVertexToDual.size());
 	mesh.Cell2DsEdges = NewCell2DsEdges; // Assegno gli spigoli duali alla matrice degli spigoli del poliedro duale
-	//mesh.Cell2DsNumVertices.resize(mappaVertexToDual.size()); // Riservo spazio per il numero di vertici di ogni faccia duale
 	mesh.Cell2DsNumVertices.assign(mappaVertexToDual.size(), NewCell2DsVertices[0].size()); // Assegno il numero di vertici di ogni faccia duale (tutti hanno lo stesso numero di vertici)
-	//mesh.Cell2DsNumEdges.resize(mappaVertexToDual.size()); // Riservo spazio per il numero di spigoli di ogni faccia duale
 	mesh.Cell2DsNumEdges.assign(mappaVertexToDual.size(), NewCell2DsVertices[0].size()); // Assegno il numero di spigoli di ogni faccia duale (tutti hanno lo stesso numero di spigoli)
 
 	//RIEMIPIO CELL3
@@ -334,11 +353,8 @@ bool MeshDuale(PolyhedraMesh& mesh)
 	mesh.Cell3DsNumVertices = NumFaces; // Il numero di vertici del poliedro duale è uguale al numero di facce del poliedro originale
 	mesh.Cell3DsNumEdges = edgeToFaces.size(); // Il numero di spigoli del poliedro duale è uguale al numero di spigoli duali
 	mesh.Cell3DsNumFaces = mappaVertexToDual.size(); // Il numero di facce del poliedro duale è uguale al numero di vertici originali
-	//mesh.Cell3DsVertices.resize(NumFaces); // Riservo spazio per gli ID dei vertici del poliedro duale
 	mesh.Cell3DsVertices = NewCell0DsId; // Assegno gli ID dei vertici del poliedro duale
-	//mesh.Cell3DsEdges.resize(edgeToFaces.size()); // Riservo spazio per gli ID degli spigoli del poliedro duale
 	mesh.Cell3DsEdges = NewCell1DsId; // Assegno gli ID degli spigoli del poliedro duale
-	//mesh.Cell3DsFaces.resize(mappaVertexToDual.size()); // Riservo spazio per gli ID delle facce del poliedro duale
 	mesh.Cell3DsFaces = NewCell2DsId; // Assegno gli ID delle facce del poliedro duale
     
 }
