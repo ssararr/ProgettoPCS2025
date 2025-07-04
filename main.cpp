@@ -115,10 +115,10 @@ int main(int argc, char *argv[]){
         }
 
         // Duale
-        if(duale){
+        if(duale){ 
             MeshDuale(mesh);
             if(Poliedro == "Ottaedro"){
-                Poliedro = "Cubo";
+                Poliedro = "Cubo";                
             }
             else if(Poliedro == "Icosaedro"){
                 Poliedro = "Dodecaedro";
@@ -195,10 +195,10 @@ int main(int argc, char *argv[]){
         }
 
         // Duale
-        if(duale){
+        if(duale){ 
             MeshDuale(mesh);
             if(Poliedro == "Ottaedro"){
-                Poliedro = "Cubo";
+                Poliedro = "Cubo";                
             }
             else if(Poliedro == "Icosaedro"){
                 Poliedro = "Dodecaedro";
