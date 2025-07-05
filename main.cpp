@@ -133,33 +133,10 @@ int main(int argc, char *argv[]){
 
 
         //////////////////////////////////////////////////////////////////////////
-
-        //CONTROLLI PRE ESPORTAZIONE
-
-        // Verifica la consistenza della mesh per ParaView
-        cout << "\n=== VERIFICA PER PARAVIEW ===" << endl;
-        cout << "Numero punti in NumCell0Ds: " << mesh.NumCell0Ds << endl;
-        cout << "Numero punti: " << mesh.Cell0DsCoordinates.cols() << endl;
+        //CONTROLLI PRE ESPORTAZIONE        
+        cout << "\n=== VERIFICA PER PARAVIEW ===" << endl;        
+        cout << "Numero vertici: " << mesh.Cell0DsCoordinates.cols() << endl;
         cout << "Numero facce: " << mesh.Cell2DsVertices.size() << endl;
-
-        // Controlla che tutti i vertici referenziati esistano
-        for (size_t i = 0; i < mesh.Cell2DsVertices.size(); ++i) {
-            for (unsigned int v : mesh.Cell2DsVertices[i]) {
-                if (v >= mesh.Cell0DsCoordinates.cols()) {
-                    cerr << "ERRORE GRAVE: Faccia " << i << " riferimento a vertice inesistente " 
-                         << v << " (max=" << mesh.Cell0DsCoordinates.cols()-1 << ")" << endl;
-                    return 1;
-                }
-            }
-    
-        // ParaView richiede almeno 3 vertici per faccia
-            if (mesh.Cell2DsVertices[i].size() < 3) {
-                cerr << "ERRORE: Faccia " << i << " ha solo " 
-                     << mesh.Cell2DsVertices[i].size() << " vertici" << endl;
-                return 1;
-            }
-        }
-
         ///////////////////////////////////////////////////////////////////////////
 
         // Controlla permessi di scrittura
@@ -352,6 +329,12 @@ int main(int argc, char *argv[]){
             PropSegmenti.push_back(PropSegmentiCammino);
 
             //////////////////////////////////////////////////////////////////////////
+<<<<<<< HEAD
+            //CONTROLLI PRE ESPORTAZIONE
+            // Verifica la consistenza della mesh per ParaView                        
+            cout << "Numero vertici: " << mesh.Cell0DsCoordinates.cols() << endl;
+            cout << "Numero facce: " << mesh.Cell2DsVertices.size() << endl;
+=======
 
             //CONTROLLI PRE ESPORTAZIONE
 
@@ -378,6 +361,7 @@ int main(int argc, char *argv[]){
                 }
             }
 
+>>>>>>> b6bb5795abe933b5514ac632eca5fc7594cda5d6
             ///////////////////////////////////////////////////////////////////////////
 
 
