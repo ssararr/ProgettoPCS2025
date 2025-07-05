@@ -12,7 +12,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -pedantic-erro
 
 # IMPOSE CXX FLAGS FOR WINDOWS
 if (WIN32)
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wa,-mbig-obj")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wa,-mbig-obj")
 endif (WIN32)
 
 # Add dependencies
@@ -25,58 +25,65 @@ list(APPEND ProgettoPCS2025_LINKED_LIBRARIES PUBLIC Eigen3::Eigen)
 find_package(Threads REQUIRED)
 list(APPEND ProgettoPCS2025_LINKED_LIBRARIES PRIVATE Threads::Threads)
 
-## GTest
-#find_package(GTest REQUIRED)
-
-#list(APPEND ProgettoPCS2025_LINKED_LIBRARIES PRIVATE GTest::gtest)
-#list(APPEND ProgettoPCS2025_LINKED_LIBRARIES PRIVATE GTest::gtest_main)
-#list(APPEND ProgettoPCS2025_LINKED_LIBRARIES PRIVATE GTest::gmock)
-#list(APPEND ProgettoPCS2025_LINKED_LIBRARIES PRIVATE GTest::gmock_main)
+## GTest - MODIFICATO: Scommentato e corretto
+find_package(GTest REQUIRED)
+list(APPEND ProgettoPCS2025_LINKED_LIBRARIES PRIVATE GTest::GTest GTest::Main)
 
 # Insert Sources
 ################################################################################
 add_subdirectory(src)
-
 list(APPEND ProgettoPCS2025_SOURCES ${src_sources})
 list(APPEND ProgettoPCS2025_HEADERS ${src_headers})
 list(APPEND ProgettoPCS2025_INCLUDE ${src_includes})
 
-
 add_subdirectory(ExportParaview)
 
+# Aggiungi la directory dei test - MODIFICATO: Scommentato
+add_subdirectory(src_test)
+list(APPEND ProgettoPCS2025_TEST_SOURCES ${src_test_sources})
+list(APPEND ProgettoPCS2025_TEST_HEADERS ${src_test_headers})
+list(APPEND ProgettoPCS2025_TEST_INCLUDE ${src_test_includes})
 
-
-#add_subdirectory(src_test)
-
-#list(APPEND ProgettoPCS2025_TEST_SOURCES ${src_test_sources})
-#list(APPEND ProgettoPCS2025_TEST_HEADERS ${src_test_headers})
-#list(APPEND ProgettoPCS2025_TEST_INCLUDE ${src_test_includes})
-
-
-#add_subdirectory(ExportParaview)
-
-
-# Create executable
+# Create main executable
 ################################################################################
 add_executable(${PROJECT_NAME}
-      main.cpp
-      ${ProgettoPCS2025_SOURCES}
-      ${ProgettoPCS2025_HEADERS})
+    main.cpp
+    ${ProgettoPCS2025_SOURCES}
+    ${ProgettoPCS2025_HEADERS})
 
-target_link_libraries(${PROJECT_NAME} ${ProgettoPCS2025_LINKED_LIBRARIES})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${ProgettoPCS2025_LINKED_LIBRARIES} ExportParaview)
-target_include_directories(${PROJECT_NAME} PRIVATE ${ProgettoPCS2025_INCLUDE})
-target_compile_options(${PROJECT_NAME} PUBLIC -fPIC)
-target_link_libraries(${PROJECT_NAME} PRIVATE ${ProgettoPCS2025_LINKED_LIBRARIES} ExportParaview)
+target_link_libraries(${PROJECT_NAME} 
+    PRIVATE 
+    ${ProgettoPCS2025_LINKED_LIBRARIES} 
+    ExportParaview)
+    
+target_include_directories(${PROJECT_NAME} 
+    PRIVATE 
+    ${ProgettoPCS2025_INCLUDE})
+    
+target_compile_options(${PROJECT_NAME} 
+    PUBLIC 
+    -fPIC)
 
-#add_executable(${PROJECT_NAME}_TEST
-#      main_test.cpp
-#      ${ProgettoPCS2025_SOURCES}
-#      ${ProgettoPCS2025_HEADERS}
-#      ${src_test_sources}
-#      ${src_test_headers})
+# Create test executable - MODIFICATO: Aggiunto linking esplicito a GTest
+add_executable(${PROJECT_NAME}_TEST
+    main_test.cpp
+    ${ProgettoPCS2025_SOURCES}
+    ${ProgettoPCS2025_HEADERS}
+    ${ProgettoPCS2025_TEST_SOURCES}
+    ${ProgettoPCS2025_TEST_HEADERS})
 
-#target_link_libraries(${PROJECT_NAME}_TEST ${ProgettoPCS2025_LINKED_LIBRARIES})
-#target_include_directories(${PROJECT_NAME}_TEST PRIVATE ${ProgettoPCS2025_INCLUDE} ${src_test_includes})
-#target_compile_options(${PROJECT_NAME}_TEST PUBLIC -fPIC)
-
+target_link_libraries(${PROJECT_NAME}_TEST 
+    PRIVATE 
+    ${ProgettoPCS2025_LINKED_LIBRARIES}
+    GTest::GTest 
+    GTest::Main
+    ExportParaview)
+    
+target_include_directories(${PROJECT_NAME}_TEST 
+    PRIVATE 
+    ${ProgettoPCS2025_INCLUDE} 
+    ${ProgettoPCS2025_TEST_INCLUDE})
+    
+target_compile_options(${PROJECT_NAME}_TEST 
+    PUBLIC 
+    -fPIC)
