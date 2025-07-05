@@ -28,7 +28,7 @@ bool outputFile(const PolyhedraMesh& triangolata, const string& OutputFile0, con
     // Controllo se i file sono stati aperti correttamente
     if (!Cell0Ds.is_open())
     {
-        cerr << "Error opening output file." << endl;
+        cerr << "Errore nell'apertura del file." << endl;
         return false;
     }
 
@@ -45,8 +45,9 @@ bool outputFile(const PolyhedraMesh& triangolata, const string& OutputFile0, con
     // Ciclo per scrivere le coordinate dei punti 0D
     for (unsigned int i=0; i<triangolata.NumCell0Ds; i++) //n righe
     {
-        Cell0Ds.unsetf(ios::fixed); // disattiva il formato fixed, perché gli id mi servono interi (potrebbe essere superfluo, perché gli id sono già interi)
-        Cell0Ds << triangolata.Cell0DsId[i] << " ";//ID del vertice
+        //Cell0Ds.unsetf(ios::fixed); // disattiva il formato fixed, perché gli id mi servono interi (potrebbe essere superfluo, perché gli id sono già interi)
+        //Cell0Ds << triangolata.Cell0DsId[i] << " ";//ID del vertice (commentato perché altrimenti ne vengono 6 in meno altrimenti, non ccapisco perché visto che il vettore Cell0DsId ha il numero di ID dei vertici corretto)
+        Cell0Ds << i << " ";//ID del vertice
         Cell0Ds << fixed << setprecision(16)
                 << triangolata.Cell0DsCoordinates(0, i) << " " //coordinata x
                 << triangolata.Cell0DsCoordinates(1, i) << " " //coordinata y
@@ -66,7 +67,7 @@ bool outputFile(const PolyhedraMesh& triangolata, const string& OutputFile0, con
     // Controllo se i file sono stati aperti correttamente
     if (!Cell1Ds.is_open())
     {
-        cerr << "Error opening output file." << endl;
+        cerr << "Errore nell'apertura del file." << endl;
         return false;
     }
 
@@ -106,7 +107,7 @@ bool outputFile(const PolyhedraMesh& triangolata, const string& OutputFile0, con
     }
 
     // Scrivo i dati nei file
-    Cell2Ds << "ID NumVertices Vertices NumEdges Edges" << endl; // Header per le coordinate dei punti 2D
+    Cell2Ds << "Errore nell'apertura del file." << endl; // Header per le coordinate dei punti 2D
     /*
     NumCell2Ds unsigned int numero di facce ==> n righe 
     vector<unsigned int> Cell2DsId ==> ID delle facce
@@ -147,7 +148,7 @@ bool outputFile(const PolyhedraMesh& triangolata, const string& OutputFile0, con
     // Controllo se i file sono stati aperti correttamente
     if (!Cell3Ds.is_open())
     {
-        cerr << "Error opening output file." << endl;
+        cerr << "Errore nell'apertura del file." << endl;
         return false;
     }
 

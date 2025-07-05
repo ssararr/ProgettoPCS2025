@@ -145,9 +145,9 @@ int main(int argc, char *argv[]){
                                  mesh.Cell0DsCoordinates,
                                  mesh.Cell1DsExtrema);
 
-        utilities.ExportPolygons("./Cell2Ds.inp",
+        /*utilities.ExportPolygons("./Cell2Ds.inp",
                                  mesh.Cell0DsCoordinates,
-                                 mesh.Cell2DsVertices);
+                                 mesh.Cell2DsVertices); */
                 
         return 0;
     }
@@ -238,31 +238,14 @@ int main(int argc, char *argv[]){
             }
             
             //proiezione su una sfera
-            //ProiezioneSfera(mesh);
-
-
-        //esporto le mesh
-	    Gedim::UCDUtilities utilities;
-	    utilities.ExportPoints("./Cell0Ds.inp", 
-	    					   mesh.Cell0DsCoordinates);
-	
-	    utilities.ExportSegments("./Cell1Ds.inp",
-                                 mesh.Cell0DsCoordinates,
-                                 mesh.Cell1DsExtrema);
-        
-        utilities.ExportPolygons("./Cell2Ds.inp",
-                                 mesh.Cell0DsCoordinates,
-                                 mesh.Cell2DsVertices);                        
-
-
-        return 0;
+            ProiezioneSfera(mesh);
 
             //output della mesh triangolata
             outputFile(mesh, "Cell0Ds.txt", "Cell1Ds.txt", "Cell2Ds.txt", "Cell3Ds.txt"); 
 
 
             //esporto le mesh 
-            
+
             //Proprietà 1. per i punti del cammino minimo
             vector<double> PuntiCammino(mesh.NumCell0Ds, 0.0); //cioè su paraview, nella scala tra blu (0) e rosso (1), i punti inizialmente non fanno parte del cammino minimo
             for (const auto& punto : percorso)
@@ -331,7 +314,7 @@ int main(int argc, char *argv[]){
             PropSegmenti.push_back(PropSegmentiCammino);
 
 
-            //UCDUtilities utilities;
+            UCDUtilities utilities;
             utilities.ExportPoints("./Cell0Ds.inp", 
                                     mesh.Cell0DsCoordinates,
                                     PropPunti);
@@ -342,9 +325,9 @@ int main(int argc, char *argv[]){
                                     PropPunti,
                                     PropSegmenti); 
 
-            utilities.ExportPolygons("./Cell2Ds.inp",
+            /*utilities.ExportPolygons("./Cell2Ds.inp",
                                     mesh.Cell0DsCoordinates,
-                                    mesh.Cell2DsVertices); 
+                                    mesh.Cell2DsVertices); */
                                     
             return 0;
         }
