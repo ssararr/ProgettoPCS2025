@@ -8,14 +8,10 @@ using namespace std;
 using namespace Eigen;
 using namespace PolyhedraLibrary;
 
-double distanceBtw(const vector<double>& point1, const vector<double>& point2); //funzione che conta la distanza tra due vettori di coordinate	3D
 
-vector<vector<double>> eigenMatrixToVectorVector(const MatrixXd& matrix); //funzione che converte un oggetto MatrixXd in un vettore di vettori di double
-
-map<int, vector<unsigned int>> findClosestDualVertices(       //funzione che, dati due vector vector contenenti le coordinate dei vertici originali e dei vertici duali, restituisce una mappa in cui associa ad ogni id di un vertice originale gli id dei vertici duali pi� vicini
-	const vector<vector<double>>& originalVertices,
-	const vector<vector<double>>& dualVertices
-);
+void OrderFaces(const vector<unsigned int>& unordered_faces, 
+               vector<unsigned int>& ordered_faces, 
+               const PolyhedraMesh& mesh); //funzione che ordina le facce di una mesh in modo che siano adiacenti tra loro, partendo da una faccia iniziale
 
 namespace PolyhedraLibrary {             //riempie la nuova mesh con i vertici duali, gli spigoli duali e le facce duali
 
