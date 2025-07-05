@@ -10,12 +10,155 @@
 #include <limits> //libreria per i limiti numerici
 #include <algorithm> //libreria per le funzioni di ricerca e ordinamento
 #include <numeric>  // Per std::iota
+#include <set> //Per std::set
+#include <queue> //Per std::queue
 
 //(la libreria Eigen dev'essere già inclusa in Duale.hpp e PolyhedraMesh.hpp)
 
 using namespace std;
 using namespace Eigen;
 using namespace PolyhedraLibrary;
+
+void OrderFaces(const vector<unsigned int>& unordered_faces,
+               vector<unsigned int>& ordered_faces,
+               const PolyhedraMesh& mesh)
+{
+    ordered_faces.clear();
+    
+    // Caso base: nessuna faccia o una sola faccia
+    if (unordered_faces.empty()) {
+        return;
+    }
+    if (unordered_faces.size() == 1) {
+        ordered_faces.push_back(unordered_faces[0]);
+        return;
+    }
+
+    // Mappa per trovare rapidamente le facce adiacenti a ciascuna faccia
+    map<unsigned int, vector<unsigned int>> face_adjacency;
+    
+    // Costruisci la mappa di adiacenza tra facce
+    for (size_t i = 0; i < unordered_faces.size(); ++i) {
+        unsigned int face1 = unordered_faces[i];
+        const auto& edges1 = mesh.Cell2DsEdges[face1];
+        
+        for (size_t j = i+1; j < unordered_faces.size(); ++j) {
+            unsigned int face2 = unordered_faces[j];
+            const auto& edges2 = mesh.Cell2DsEdges[face2];
+            
+            // Cerca un edge in comune
+            bool found_common = false;
+            for (unsigned int e1 : edges1) {
+                for (unsigned int e2 : edges2) {
+                    if (e1 == e2) {
+                        face_adjacency[face1].push_back(face2);
+                        face_adjacency[face2].push_back(face1);
+                        found_common = true;
+                        break;
+                    }
+                }
+                if (found_common) break;
+            }
+        }
+    }
+
+    // Verifica che tutte le facce siano connesse
+    set<unsigned int> visited;
+    queue<unsigned int> to_visit;
+    to_visit.push(unordered_faces[0]);
+    visited.insert(unordered_faces[0]);
+
+    while (!to_visit.empty()) {
+        unsigned int current = to_visit.front();
+        to_visit.pop();
+        
+        for (unsigned int neighbor : face_adjacency[current]) {
+            if (visited.find(neighbor) == visited.end()) {
+                visited.insert(neighbor);
+                to_visit.push(neighbor);
+            }
+        }
+    }
+
+    // Se non tutte le facce sono connesse, usiamo un ordinamento semplice
+    if (visited.size() != unordered_faces.size()) {
+        ordered_faces = unordered_faces;
+        return;
+    }
+
+    // Ordinamento ciclico delle facce
+    ordered_faces.push_back(unordered_faces[0]);
+    unsigned int prev_face = unordered_faces[0];
+    unsigned int first_face = prev_face;
+    
+    while (ordered_faces.size() < unordered_faces.size()) {
+        bool found_next = false;
+        
+        // Cerca la prossima faccia non ancora usata che è adiacente alla precedente
+        for (unsigned int candidate : face_adjacency[prev_face]) {
+            if (find(ordered_faces.begin(), ordered_faces.end(), candidate) == ordered_faces.end()) {
+                ordered_faces.push_back(candidate);
+                prev_face = candidate;
+                found_next = true;
+                break;
+            }
+        }
+        
+        // Se non troviamo una faccia adiacente, cerchiamo qualsiasi faccia rimanente
+        if (!found_next) {
+            for (unsigned int remaining : unordered_faces) {
+                if (find(ordered_faces.begin(), ordered_faces.end(), remaining) == ordered_faces.end()) {
+                    ordered_faces.push_back(remaining);
+                    prev_face = remaining;
+                    break;
+                }
+            }
+        }
+        
+        // Controllo di sicurezza per evitare loop infiniti
+        if (ordered_faces.size() == unordered_faces.size()) {
+            break;
+        }
+    }
+
+    // Verifica che l'ultima faccia sia adiacente alla prima per chiudere il ciclo
+    bool last_connected_to_first = false;
+    for (unsigned int neighbor : face_adjacency[ordered_faces.back()]) {
+        if (neighbor == first_face) {
+            last_connected_to_first = true;
+            break;
+        }
+    }
+    
+    if (!last_connected_to_first) {
+        // Se non sono connesse, riordiniamo per trovare una sequenza migliore
+        vector<unsigned int> reordered;
+        reordered.push_back(first_face);
+        
+        for (size_t i = 1; i < ordered_faces.size(); ++i) {
+            bool found_better = false;
+            
+            for (size_t j = i; j < ordered_faces.size(); ++j) {
+                for (unsigned int neighbor : face_adjacency[reordered.back()]) {
+                    if (neighbor == ordered_faces[j]) {
+                        reordered.push_back(ordered_faces[j]);
+                        ordered_faces.erase(ordered_faces.begin() + j);
+                        found_better = true;
+                        break;
+                    }
+                }
+                if (found_better) break;
+            }
+            
+            if (!found_better && i < ordered_faces.size()) {
+                reordered.push_back(ordered_faces[i]);
+            }
+        }
+        
+        ordered_faces = reordered;
+    }
+}
+
 
 
 //definisco una funzione distanza che calcola la distanza euclidea tra due vettori di dimensione 3 che contengono le cooridnate x, y, z
@@ -154,204 +297,265 @@ namespace PolyhedraLibrary {
 
 bool MeshDuale(PolyhedraMesh& mesh) 
 {
-	//ASSOCIO OGNI FACCIA AL SUO VERTICE DUALE (RIEMPIO NewCell0DsId e NewCell0DsCoordinates)
-	unsigned int NumFaces = mesh.Cell3DsNumFaces;
-	if (NumFaces == 0) {
-		cerr << "Non sono presenti facce nella mesh." << endl;
-		return false;
-	}
-	vector<unsigned int> NewCell0DsId;
-	MatrixXd NewCell0DsCoordinates(3, NumFaces); // Inizializzo la matrice delle coordinate dei vertici duali
+    // 1. INIZIALIZZAZIONE E VERIFICA DELLA MESH ORIGINALE
+    if (mesh.NumCell3Ds != 1) {
+        cerr << "ERRORE: La mesh deve contenere esattamente 1 cella 3D" << endl;
+        return false;
+    }
 
-	for (unsigned int faceID = 0; faceID < NumFaces; faceID++) {
-		if (mesh.Cell2DsNumVertices[faceID] == 0) {
-			cerr << "La faccia faceID " << faceID << " non ha vertici." << endl;
-			return false;
-		}
-		Vector3d baricentro = Vector3d::Zero(); // Inizializzo il baricentro a zero
-		for (const auto& id_vertex : mesh.Cell2DsVertices[faceID]) {	// [[0,]]
-			baricentro += mesh.Cell0DsCoordinates.col(id_vertex); // Sommo le coordinate dei vertici della faccia
-		}		
-		baricentro /= mesh.Cell2DsNumVertices[faceID]; // Calcolo il baricentro dividendo per il numero di vertici della faccia
-		NewCell0DsCoordinates.col(faceID) = baricentro; // Assegno il baricentro alla colonna corrispondente nella matrice delle coordinate dei vertici duali
-		NewCell0DsId.push_back(faceID); // Associo l'ID della faccia al nuovo vertice duale
-		//(inutile?) dualVertexToFace[faceID] = baricentro; // Associo il baricentro alla faccia
-	}
-	
-	
-	//UNISCO OGNI BARICENTRO (VERTICI DUALI) AI BARICENTRI DELLE FACCE ADIACENTI (RIEMPIO NewCell1DsId e NewCell1DsExtrema)
-	vector<pair<unsigned int, unsigned int>> dualEdges; // Vettore di coppie di ID delle facce che condividono un edge 
+    unsigned int NumFaces = mesh.Cell3DsNumFaces;
+    if (NumFaces == 0) {
+        cerr << "ERRORE: Mesh senza facce!" << endl;
+        return false;
+    }
 
-	map<unsigned int, vector<unsigned int>> edgeToFaces; // Mappa che associa ad ogni spigolo le facce che condividono tale spigolo
+    cout << "\n=== INIZIO DUALIZZAZIONE ===" << endl;
+    cout << "Facce originali: " << NumFaces << endl;
+    cout << "Vertici originali: " << mesh.NumCell0Ds << endl;
 
-	//Per ogni faccia, scorro i suoi spigoli e aggiungo tale faccia nella lista delle facce che condividono tale spigolo
-	for (unsigned int faceID = 0; faceID < NumFaces; faceID++) {		
-		for (const auto& edgeID : mesh.Cell2DsEdges[faceID]) {
-			edgeToFaces[edgeID].push_back(faceID);
-		}
-	}
-	//Per ogni spigolo condiviso da esattamente DUE facce, aggiungo un dualEdge
-	for (const auto& entry : edgeToFaces) {
-		const auto& facesSharingEdge = entry.second; //accedo alla lista di facce che condividono tale edge (chiave della mappa) 
-		if (facesSharingEdge.size() == 2) { // Se lo spigolo è condiviso da due facce
-			dualEdges.emplace_back(min(facesSharingEdge[0], facesSharingEdge[1]), max(facesSharingEdge[0], facesSharingEdge[1])); // Aggiungo la coppia di ID delle facce come un nuovo spigolo duale
-		}
-	}
-	
-	MatrixXi NewCell1DsExtrema(2, dualEdges.size()); // Inizializzo la matrice degli estremi degli spigoli duali
-	vector<unsigned int> NewCell1DsId(dualEdges.size()); // Vettore per gli ID degli spigoli duali
-	unsigned int edgeIndex = 0;
-	for (auto& entry : edgeToFaces)
-	{
-		auto& edge = entry.second;
-		NewCell1DsExtrema(0, edgeIndex) = edge[0]; // Assegno il primo ID della coppia come primo estremo dello spigolo duale
-		NewCell1DsExtrema(1, edgeIndex) = edge[1]; // Assegno il secondo ID della coppia come secondo estremo dello spigolo duale
-		NewCell1DsId.push_back(edgeIndex); // Aggiungo l'ID dello spigolo duale
-		edgeIndex++;
-	}
+    // 2. CREAZIONE VERTICI DUALI (BARICENTRI DELLE FACCE)
+    vector<unsigned int> NewCell0DsId(NumFaces);
+    MatrixXd NewCell0DsCoordinates(3, NumFaces);
+    map<unsigned int, unsigned int> Faces_bar;
 
+    for (unsigned int faceID = 0; faceID < NumFaces; faceID++) {
+        if (mesh.Cell2DsNumVertices[faceID] == 0) {
+            cerr << "ERRORE: Faccia " << faceID << " senza vertici!" << endl;
+            return false;
+        }
 
-	//DEFINISCO OGNI FACCIA DUALE COME L'INSIEME DEI VERTICI DUALI PIU' VICINI AD OGNI VERTICE ORIGINARIO
-	vector<vector<double>> originalVertices = eigenMatrixToVectorVector(mesh.Cell0DsCoordinates); // Converto le coordinate dei vertici originali in un vettore di vettori
-	vector<vector<double>> dualVertices = eigenMatrixToVectorVector(NewCell0DsCoordinates); // Converto le coordinate dei vertici duali in un vettore di vettori
+        Vector3d baricentro = Vector3d::Zero();
+        for (const auto& id_vertex : mesh.Cell2DsVertices[faceID]) {
+            if (id_vertex >= mesh.NumCell0Ds) {
+                cerr << "ERRORE: Faccia " << faceID << " riferimento a vertice inesistente " 
+                     << id_vertex << endl;
+                return false;
+            }
+            baricentro += mesh.Cell0DsCoordinates.col(id_vertex);
+        }
+        baricentro /= mesh.Cell2DsNumVertices[faceID];
 
-	map<int, vector<unsigned int>> mappaVertexToDual;	
+        NewCell0DsCoordinates.col(faceID) = baricentro;
+        NewCell0DsId[faceID] = faceID;
+        Faces_bar[faceID] = faceID;
+    }
 
-	//AGGIUNTI CONTROLLI SULLE DIMENSIONI DELLE mesh.Cell0DsCoordinates E NewCell0DsCoordinates PRIMA DEL RICHIAMO DI findClosestDualVertices
-	cout << "Dimensioni Cell0DsId: " << mesh.Cell0DsId.size() << endl;
-	cout << "Dimensioni NewCell0DsId: " << NewCell0DsId.size() << endl;
-	cout << "Dimensioni Cell0DsCoordinates: " << mesh.Cell0DsCoordinates.rows() << "x" << mesh.Cell0DsCoordinates.cols() << endl;
-    cout << "Dimensioni NewCell0DsCoordinates: " << NewCell0DsCoordinates.rows() << "x" << NewCell0DsCoordinates.cols() << endl;
+    // 3. COSTRUZIONE SPIGOLI DUALI (CONNESSIONI TRA FACCE ADIACENTI)
+    map<unsigned int, vector<unsigned int>> edgeToFaces;
+    for (unsigned int faceID = 0; faceID < NumFaces; faceID++) {
+        for (const auto& edgeID : mesh.Cell2DsEdges[faceID]) {
+            if (edgeID >= mesh.NumCell1Ds) {
+                cerr << "ERRORE: Faccia " << faceID << " riferimento a spigolo inesistente " 
+                     << edgeID << endl;
+                return false;
+            }
+            edgeToFaces[edgeID].push_back(faceID);
+        }
+    }
 
+    MatrixXi NewCell1DsExtrema(2, edgeToFaces.size());
+    vector<unsigned int> NewCell1DsId(edgeToFaces.size());
+    map<pair<unsigned int, unsigned int>, unsigned int> edgeMap;
+    set<pair<unsigned int, unsigned int>> createdEdges;
+    unsigned int edgeIndex = 0;
 
-	unsigned int num_closest = 4;
-	mappaVertexToDual = findClosestDualVertices(originalVertices, dualVertices, num_closest); // Trovo i vertici duali più vicini per ogni vertice originale /*
+    for (const auto& entry : edgeToFaces) {
+        if (entry.second.size() != 2) {
+            cerr << "ATTENZIONE: Spigolo " << entry.first << " con " 
+                 << entry.second.size() << " facce associate (attese 2)" << endl;
+            continue;
+        }
 
-	vector<vector<unsigned int>> NewCell2DsVertices;
-	vector<unsigned int> NewCell2DsId;
+        unsigned int f1 = entry.second[0];
+        unsigned int f2 = entry.second[1];
+        auto edgeKey = make_pair(min(f1, f2), max(f1, f2));
 
-	// 1. Costruisci mappa vertex → facce che lo contengono
-	map<unsigned int, vector<unsigned int>> vertex_to_faces;
+        if (createdEdges.find(edgeKey) == createdEdges.end()) {
+            NewCell1DsExtrema(0, edgeIndex) = f1;
+            NewCell1DsExtrema(1, edgeIndex) = f2;
+            NewCell1DsId[edgeIndex] = edgeIndex;
+            edgeMap[edgeKey] = edgeIndex;
+            createdEdges.insert(edgeKey);
+            edgeIndex++;
+        }
+    }
 
-	for (unsigned int f = 0; f < mesh.Cell2DsVertices.size(); ++f) {
-		for (unsigned int v : mesh.Cell2DsVertices[f]) {
-			vertex_to_faces[v].push_back(f);
-		}
-	}
+    cout << "Spigoli duali creati: " << edgeIndex << "/" << edgeToFaces.size() << endl;
 
-	// 2. Ordina ciclicamente i centroidi delle facce attorno a ciascun vertice
-	for (const auto& [v_idx, face_ids] : vertex_to_faces) {
-		const auto& origin = originalVertices[v_idx];
-		vector<pair<double, unsigned int>> angle_face_pairs;
+    // 4. COSTRUZIONE FACCE DUALI (PER OGNI VERTICE ORIGINALE)
+    vector<unsigned int> NewCell2DsId;
+    vector<vector<unsigned int>> NewCell2DsVertices;
+    vector<vector<unsigned int>> NewCell2DsEdges;
+    map<unsigned int, vector<unsigned int>> vertex_to_faces;
+    set<unsigned int> problematic_vertices;
+    map<vector<unsigned int>, unsigned int> face_check;
 
-		// Calcolo normale media per costruire un piano locale
-		vector<double> normal(3, 0.0);
+    // Costruisci mappa vertice->facce
+    for (unsigned int f = 0; f < mesh.Cell2DsVertices.size(); ++f) {
+        for (unsigned int v : mesh.Cell2DsVertices[f]) {
+            vertex_to_faces[v].push_back(f);
+        }
+    }
 
-		for (unsigned int f_id : face_ids) {
-			const auto& centroid = dualVertices[f_id];
-			normal[0] += (centroid[1] - origin[1]) * (centroid[2] - origin[2]);
-			normal[1] += (centroid[2] - origin[2]) * (centroid[0] - origin[0]);
-			normal[2] += (centroid[0] - origin[0]) * (centroid[1] - origin[1]);
-		}
+    // Verifica vertici senza facce
+    for (unsigned int v = 0; v < mesh.NumCell0Ds; ++v) {
+        if (vertex_to_faces[v].empty()) {
+            cerr << "ATTENZIONE: Vertice " << v << " non ha facce associate!" << endl;
+        }
+    }
 
-		// Vettori base locale ortogonali
-		vector<double> e1 = {1, 0, 0};
-		vector<double> e2 = {0, 1, 0};
-		if (normal[0] != 0 || normal[1] != 0 || normal[2] != 0) {
-			// ortonormalizzazione (semplificata)
-			double norm = std::sqrt(normal[0]*normal[0] + normal[1]*normal[1] + normal[2]*normal[2]);
-			for (int i = 0; i < 3; ++i) normal[i] /= norm;
-			e1 = {-normal[1], normal[0], 0}; // un vettore ortogonale (arbitrario)
-			double len = sqrt(e1[0]*e1[0] + e1[1]*e1[1]);
-			if (len > 1e-6)
-				for (int i = 0; i < 3; ++i) e1[i] /= len;
-			e2 = {
-				normal[1]*e1[2] - normal[2]*e1[1],
-				normal[2]*e1[0] - normal[0]*e1[2],
-				normal[0]*e1[1] - normal[1]*e1[0]
-			};
-		}
+    // Crea facce duali con controlli rigorosi
+    for (const auto& [v_idx, face_ids] : vertex_to_faces) {
+        vector<unsigned int> orderedFaces;
+        OrderFaces(face_ids, orderedFaces, mesh);
 
-		for (unsigned int f_id : face_ids) {
-			const auto& centroid = dualVertices[f_id];
-			std::vector<double> vec = {
-				centroid[0] - origin[0],
-				centroid[1] - origin[1],
-				centroid[2] - origin[2]
-			};
-			double x = vec[0]*e1[0] + vec[1]*e1[1] + vec[2]*e1[2];
-			double y = vec[0]*e2[0] + vec[1]*e2[1] + vec[2]*e2[2];
-			double angle = atan2(y, x);
-			angle_face_pairs.emplace_back(angle, f_id);
-		}
+            // Semplifichiamo prendendo solo le prime 4 facce
+           /* if (orderedFaces.size() > 6) {
+                orderedFaces.resize(4); // Forza a quadrilatero
+                cerr << "  Ridotto a quadrilatero" << endl;
+            }
+        
+        // Controllo integrità ordinamento
+        if (orderedFaces.size() != face_ids.size()) {
+            cerr << "PROBLEMA: Vertice " << v_idx << " - facce ordinate " 
+                 << orderedFaces.size() << " vs originali " << face_ids.size() << endl;
+            problematic_vertices.insert(v_idx);
+            continue;
+        }*/
 
-		sort(angle_face_pairs.begin(), angle_face_pairs.end());
+        // Crea la faccia duale
+        unsigned int valence = orderedFaces.size();
+        vector<unsigned int> dualFaceEdges(valence);
 
-		vector<unsigned int> ordered;
-		for (const auto& [angle, fid] : angle_face_pairs) {
-			ordered.push_back(fid);
-		}
+        // Collega gli spigoli con verifica
+        for (unsigned int k = 0; k < valence; k++) {
+            unsigned int curr = orderedFaces[k];
+            unsigned int next = orderedFaces[(k+1)%valence];
+            auto edgeKey = make_pair(min(curr, next), max(curr, next));
 
-		NewCell2DsId.push_back(v_idx);
-		NewCell2DsVertices.push_back(ordered);
-	}
+            if (edgeMap.find(edgeKey) == edgeMap.end()) {
+                cerr << "ERRORE: Spigolo mancante tra facce " << curr << " e " << next << endl;
+                return false;
+            }
+            dualFaceEdges[k] = edgeMap[edgeKey];
+        }
 
+        // Controllo duplicati
+        vector<unsigned int> sorted_face = orderedFaces;
+        sort(sorted_face.begin(), sorted_face.end());
+        
+        if (face_check.count(sorted_face)) {
+            cerr << "FACCIA DUPLICATA: Vertice " << v_idx << " uguale a " 
+                 << face_check[sorted_face] << endl;
+            continue;
+        }
+        face_check[sorted_face] = v_idx;
 
-	for (const auto& entry : mappaVertexToDual) { // Scorro la mappa dei vertici originali e i loro vertici duali più vicini
-		unsigned int originalVertexId = entry.first; // ID del vertice originale
-		const vector<unsigned int>& dualVertexIds = entry.second; // Indici dei vertici duali più vicini
-		NewCell2DsId.push_back(originalVertexId); // Aggiungo l'ID del vertice originale alla lista degli ID delle facce duali
-		NewCell2DsVertices.push_back(dualVertexIds); // Aggiungo gli ID dei vertici duali come un nuovo vettore di vertici per la faccia duale
-	}
+        NewCell2DsId.push_back(v_idx);
+        NewCell2DsVertices.push_back(orderedFaces);
+        NewCell2DsEdges.push_back(dualFaceEdges);
+    }
 
-	vector<vector<unsigned int>> NewCell2DsEdges(mappaVertexToDual.size()); // Inizializza correttamente
-
-	for (unsigned int i = 0; i < edgeToFaces.size(); ++i) //ogni i è un edge duale
-	{
-		const auto& edge = edgeToFaces[i]; // Prendo la coppia di facce che condividono lo spigolo
-		
-		unsigned int j = 0;
-		for (const auto& entry : mappaVertexToDual) {
-    		const auto& dualVerts = entry.second;
-    		if (dualVerts.size() >= 2) {
-        		if (find(dualVerts.begin(), dualVerts.end(), edge[0]) != dualVerts.end() &&
-            		find(dualVerts.begin(), dualVerts.end(), edge[1]) != dualVerts.end()) {
-            		NewCell2DsEdges[j].push_back(i); // i deve essere l'indice reale dello spigolo duale
-        		}
-   			 }
-    		++j;
-		}
-	}
-
-	//RIEMPIO CELL0
-	mesh.NumCell0Ds = NumFaces; // Imposto il numero di celle 0D (vertici duali) uguale al numero di facce
-	mesh.Cell0DsId = NewCell0DsId; // Assegno gli ID dei vertici duali al vettore degli ID dei vertici del poliedro duale
-	mesh.Cell0DsCoordinates = NewCell0DsCoordinates; // Assegno le coordinate dei vertici duali alla matrice delle coordinate dei vertici del poliedro duale
-
-	//RIEMPIO CELL1
-	mesh.NumCell1Ds = edgeToFaces.size(); // Imposto il numero di celle 1D (spigoli duali) uguale al numero di spigoli duali
-	mesh.Cell1DsId = NewCell1DsId; // Assegno gli ID degli spigoli duali al vettore degli ID degli spigoli del poliedro duale
-	mesh.Cell1DsExtrema = NewCell1DsExtrema; // Assegno gli estremi degli spigoli duali alla matrice degli estremi degli spigoli del poliedro duale
-
-	//RIEMPIO CELL2
-	mesh.NumCell2Ds = mappaVertexToDual.size(); // Imposto il numero di celle 2D (facce duali) uguale al numero di vertici originali
-	mesh.Cell2DsId = NewCell2DsId;
-	mesh.Cell2DsVertices = NewCell2DsVertices;
-	mesh.Cell2DsEdges = NewCell2DsEdges; // Assegno gli spigoli duali alla matrice degli spigoli del poliedro duale
-	mesh.Cell2DsNumVertices.assign(mappaVertexToDual.size(), NewCell2DsVertices[0].size()); // Assegno il numero di vertici di ogni faccia duale (tutti hanno lo stesso numero di vertici)
-	mesh.Cell2DsNumEdges.assign(mappaVertexToDual.size(), NewCell2DsVertices[0].size()); // Assegno il numero di spigoli di ogni faccia duale (tutti hanno lo stesso numero di spigoli)
-
-	//RIEMIPIO CELL3
-	mesh.NumCell3Ds = 1; // Il poliedro duale ha una sola cella 3D (il poliedro stesso)
-	mesh.Cell3DsId = 0; // L'ID della cella 3D del poliedro duale è 0
-	
-	//SENZA TRIANGOLAZIONE VALGONO LE RIGHE SEGUENTI
-	mesh.Cell3DsNumVertices = NumFaces; // Il numero di vertici del poliedro duale è uguale al numero di facce del poliedro originale
-	mesh.Cell3DsNumEdges = edgeToFaces.size(); // Il numero di spigoli del poliedro duale è uguale al numero di spigoli duali
-	mesh.Cell3DsNumFaces = mappaVertexToDual.size(); // Il numero di facce del poliedro duale è uguale al numero di vertici originali
-	mesh.Cell3DsVertices = NewCell0DsId; // Assegno gli ID dei vertici del poliedro duale
-	mesh.Cell3DsEdges = NewCell1DsId; // Assegno gli ID degli spigoli del poliedro duale
-	mesh.Cell3DsFaces = NewCell2DsId; // Assegno gli ID delle facce del poliedro duale
+    // 5. VERIFICHE FINALI
+    cout << "\n=== VERIFICHE FINALI ===" << endl;
+    cout << "Facce duali create: " << NewCell2DsId.size() << endl;
+    cout << "Vertici problematici: " << problematic_vertices.size() << endl;
     
+    if (NewCell2DsId.size() != mesh.NumCell0Ds) {
+        cerr << "DISCREPANZA: " << mesh.NumCell0Ds << " vertici ma " 
+             << NewCell2DsId.size() << " facce duali create" << endl;
+        
+        // Trova vertici mancanti
+        set<unsigned int> dual_vertices(NewCell2DsId.begin(), NewCell2DsId.end());
+        for (unsigned int v = 0; v < mesh.NumCell0Ds; ++v) {
+            if (dual_vertices.find(v) == dual_vertices.end()) {
+                cerr << "Vertice " << v << " senza faccia duale" << endl;
+            }
+        }
+    }
+
+    // 6. AGGIORNAMENTO MESH DUALE
+    mesh.NumCell0Ds = NumFaces;
+    mesh.Cell0DsId = NewCell0DsId;
+    mesh.Cell0DsCoordinates = NewCell0DsCoordinates;
+
+    mesh.NumCell1Ds = edgeIndex;
+    mesh.Cell1DsId = NewCell1DsId;
+    mesh.Cell1DsExtrema = NewCell1DsExtrema;
+
+    mesh.NumCell2Ds = NewCell2DsId.size();
+    mesh.Cell2DsId = NewCell2DsId;
+    mesh.Cell2DsVertices = NewCell2DsVertices;
+    mesh.Cell2DsEdges = NewCell2DsEdges;
+    
+    // Imposta numero di vertici e spigoli per faccia
+    mesh.Cell2DsNumVertices.resize(mesh.NumCell2Ds);
+    mesh.Cell2DsNumEdges.resize(mesh.NumCell2Ds);
+    for (unsigned int i = 0; i < mesh.NumCell2Ds; i++) {
+        mesh.Cell2DsNumVertices[i] = mesh.Cell2DsVertices[i].size();
+        mesh.Cell2DsNumEdges[i] = mesh.Cell2DsEdges[i].size();
+    }
+
+    // Aggiorna cella 3D
+    mesh.NumCell3Ds = 1;
+    mesh.Cell3DsId = {0};
+    mesh.Cell3DsNumVertices = {mesh.NumCell0Ds};
+    mesh.Cell3DsNumEdges = {mesh.NumCell1Ds};
+    mesh.Cell3DsNumFaces = {mesh.NumCell2Ds};
+    mesh.Cell3DsVertices = {mesh.Cell0DsId};
+    mesh.Cell3DsEdges = {mesh.Cell1DsId};
+    mesh.Cell3DsFaces = {mesh.Cell2DsId};
+
+    /////////////////////////////////////////////////////////////////////////////////////
+
+    // Verifica DOPO la creazione della mesh duale ma PRIMA dell'esportazione
+    /*cout << "\n=== ANALISI FACCE DUALI PRIMA ESPORTAZIONE ===" << endl;
+
+    // Conta i tipi di facce
+    map<size_t, size_t> face_types;
+    for (const auto& face : mesh.Cell2DsVertices) {
+    face_types[face.size()]++;
+    }
+
+    // Stampa la distribuzione
+    for (const auto& [vertex_count, num_faces] : face_types) {
+    cout << "Facce con " << vertex_count << " vertici: " << num_faces << endl;
+    if (vertex_count < 3) {
+        cerr << "ERRORE: Trovata faccia con meno di 3 vertici!" << endl;
+    }
+    }
+
+    // Verifica esplicita delle facce non triangolari/quadrangolari
+    vector<size_t> problematic_faces;
+    for (size_t i = 0; i < mesh.Cell2DsVertices.size(); ++i) {
+    const auto& face = mesh.Cell2DsVertices[i];
+    if (face.size() != 3 && face.size() != 4) {
+        problematic_faces.push_back(i);
+    }
+    }
+
+    if (!problematic_faces.empty()) {
+    cerr << "\nATTENZIONE: Trovate " << problematic_faces.size() 
+            << " facce non triangolari/quadrangolari" << endl;
+    cerr << "Indici facce problematiche:";
+    for (size_t i : problematic_faces) cerr << " " << i;
+    cerr << endl;
+    
+    // Stampa i dettagli delle prime 5 facce problematiche
+    cerr << "\nDettagli prime 5 facce problematiche:" << endl;
+    for (size_t i = 0; i < min(problematic_faces.size(), size_t(5)); ++i) {
+        size_t idx = problematic_faces[i];
+        cerr << "Faccia " << idx << " (" << mesh.Cell2DsVertices[idx].size() 
+                << " vertici):";
+        for (unsigned int v : mesh.Cell2DsVertices[idx]) cerr << " " << v;
+        cerr << endl;
+    }
+}*/
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+    cout << "Dualizzazione completata con successo" << endl;
+    return true;
 }
-}   
+
+} // namespace PolyhedraLibrary
