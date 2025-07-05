@@ -227,10 +227,6 @@ bool MeshDuale(PolyhedraMesh& mesh)
 	unsigned int num_closest = 4;
 	mappaVertexToDual = findClosestDualVertices(originalVertices, dualVertices, num_closest); // Trovo i vertici duali più vicini per ogni vertice originale /*
 
-	vector<unsigned int> NewCell2DsId;
-	vector<vector<unsigned int>> NewCell2DsVertices;
-
-
 	vector<vector<unsigned int>> NewCell2DsVertices;
 	vector<unsigned int> NewCell2DsId;
 
