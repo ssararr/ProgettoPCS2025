@@ -1,0 +1,26 @@
+@startuml
+namespace PolyhedraLibrary {
+  namespace FunzioniAusiliarie {
+
+    class TriangulationUtils {
+      + PuntoSuSpigolo(A: Vector3d, B: Vector3d, P: Vector3d, tol: double): bool
+      + AggiungiVertice(P: Vector3d, VerticesMap: map<array<double,3>,uint>, Coordinates: MatrixXd, Ids: vector<uint>, currentpoint: uint&): bool
+      + AggiungiEdge(id_P: uint, id_Q: uint, EdgesMap: map<pair<uint,uint>,uint>, Extrema: MatrixXi, Ids: vector<uint>, currentedge: uint&): bool
+      + AggiungiFaccia(id_A: uint, id_B: uint, id_C: uint, FacesVerticesMap: map<array<uint,3>,uint>, EdgesMap: const map<pair<uint,uint>,uint>, Ids: vector<uint>, FacesVertices: vector<vector<uint>>, FacesEdges: vector<vector<uint>>, currentface: uint&): bool
+    }
+  }
+}
+
+class PolyhedraMesh {
+  // Riferimento alla struttura principale
+}
+
+class Eigen {
+  class Vector3d
+  class MatrixXd
+  class MatrixXi
+}
+
+TriangulationUtils --> PolyhedraMesh : Aggiorna
+TriangulationUtils --> Eigen : Usa
+@enduml
