@@ -132,6 +132,44 @@ int main(int argc, char *argv[]){
         ProiezioneSfera(mesh); 
 
 
+        //////////////////////////////////////////////////////////////////////////
+
+        //CONTROLLI PRE ESPORTAZIONE
+
+        // Verifica la consistenza della mesh per ParaView
+        cout << "\n=== VERIFICA PER PARAVIEW ===" << endl;
+        cout << "Numero punti in NumCell0Ds: " << mesh.NumCell0Ds << endl;
+        cout << "Numero punti: " << mesh.Cell0DsCoordinates.cols() << endl;
+        cout << "Numero facce: " << mesh.Cell2DsVertices.size() << endl;
+
+        // Controlla che tutti i vertici referenziati esistano
+        for (size_t i = 0; i < mesh.Cell2DsVertices.size(); ++i) {
+            for (unsigned int v : mesh.Cell2DsVertices[i]) {
+                if (v >= mesh.Cell0DsCoordinates.cols()) {
+                    cerr << "ERRORE GRAVE: Faccia " << i << " riferimento a vertice inesistente " 
+                         << v << " (max=" << mesh.Cell0DsCoordinates.cols()-1 << ")" << endl;
+                    return 1;
+                }
+            }
+    
+        // ParaView richiede almeno 3 vertici per faccia
+            if (mesh.Cell2DsVertices[i].size() < 3) {
+                cerr << "ERRORE: Faccia " << i << " ha solo " 
+                     << mesh.Cell2DsVertices[i].size() << " vertici" << endl;
+                return 1;
+            }
+        }
+
+        ///////////////////////////////////////////////////////////////////////////
+
+        // Controlla permessi di scrittura
+        ofstream test_file("./Cell2Ds.inp");
+        if (!test_file) {
+            cerr << "ERRORE: Impossibile scrivere in ./Cell2Ds.inp (problema di permessi?)" << endl;
+            return 1;
+        }
+
+
         //output della mesh triangolata
         outputFile(mesh, "Cell0Ds.txt", "Cell1Ds.txt", "Cell2Ds.txt", "Cell3Ds.txt"); 
                        
@@ -237,35 +275,35 @@ int main(int argc, char *argv[]){
                 cout << endl;
             }
             
-            //proiezione su una sfera
-            ProiezioneSfera(mesh);
+        //proiezione su una sfera
+        ProiezioneSfera(mesh);
 
-            //output della mesh triangolata
-            outputFile(mesh, "Cell0Ds.txt", "Cell1Ds.txt", "Cell2Ds.txt", "Cell3Ds.txt"); 
+        //output della mesh triangolata
+        outputFile(mesh, "Cell0Ds.txt", "Cell1Ds.txt", "Cell2Ds.txt", "Cell3Ds.txt"); 
 
 
-            //esporto le mesh 
+        //esporto le mesh 
 
-            //Proprietà 1. per i punti del cammino minimo
-            vector<double> PuntiCammino(mesh.NumCell0Ds, 0.0); //cioè su paraview, nella scala tra blu (0) e rosso (1), i punti inizialmente non fanno parte del cammino minimo
-            for (const auto& punto : percorso)
-                PuntiCammino[punto] = 1.0; //1 ai punti che fanno parte del cammino minimo
+        //Proprietà 1. per i punti del cammino minimo
+        vector<double> PuntiCammino(mesh.NumCell0Ds, 0.0); //cioè su paraview, nella scala tra blu (0) e rosso (1), i punti inizialmente non fanno parte del cammino minimo
+        for (const auto& punto : percorso)
+            PuntiCammino[punto] = 1.0; //1 ai punti che fanno parte del cammino minimo
                                 
-            UCDProperty<double> PropPuntiCammino;
-            PropPuntiCammino.Label = "Cammino Minimo: Punti"; 
-            //PropCamminoMinimo.UnitLabel = "";
-            PropPuntiCammino.Size = PuntiCammino.size(); 
-            PropPuntiCammino.NumComponents = 1; 
-            PropPuntiCammino.Data = PuntiCammino.data(); 
+        UCDProperty<double> PropPuntiCammino;
+        PropPuntiCammino.Label = "Cammino Minimo: Punti"; 
+        //PropCamminoMinimo.UnitLabel = "";
+        PropPuntiCammino.Size = PuntiCammino.size(); 
+        PropPuntiCammino.NumComponents = 1; 
+        PropPuntiCammino.Data = PuntiCammino.data(); 
 
-            vector<UCDProperty<double>> PropPunti;
-            PropPunti.push_back(PropPuntiCammino);  
+        vector<UCDProperty<double>> PropPunti;
+        PropPunti.push_back(PropPuntiCammino);  
 
 
-            //Proprietà 2. per i segmenti del cammino minimo
-            //inizialmente tutti i segmenti hanno valore 0.0 (non fanno parte del cammino minimo)
-            //poi assegno 1.0 ai segmenti che fanno parte del cammino minimo
-            vector<double> SegmentiCammino(mesh.Cell1DsExtrema.cols(), 0.0); //inizializzo il vettore dei segmenti del cammino minimo, che all'inizio contiene tanti segmenti quanti ce ne sono nella mesh, con 0.0 
+        //Proprietà 2. per i segmenti del cammino minimo
+        //inizialmente tutti i segmenti hanno valore 0.0 (non fanno parte del cammino minimo)
+        //poi assegno 1.0 ai segmenti che fanno parte del cammino minimo
+        vector<double> SegmentiCammino(mesh.Cell1DsExtrema.cols(), 0.0); //inizializzo il vettore dei segmenti del cammino minimo, che all'inizio contiene tanti segmenti quanti ce ne sono nella mesh, con 0.0 
             
 
             map<pair<unsigned int, unsigned int>, unsigned int> mappaSegmenti; //mappa per trovare rapidamente gli indici dei segmenti
@@ -312,6 +350,35 @@ int main(int argc, char *argv[]){
 
             vector<UCDProperty<double>> PropSegmenti;
             PropSegmenti.push_back(PropSegmentiCammino);
+
+            //////////////////////////////////////////////////////////////////////////
+
+            //CONTROLLI PRE ESPORTAZIONE
+
+            // Verifica la consistenza della mesh per ParaView
+            cout << "\n=== VERIFICA PER PARAVIEW ===" << endl;            
+            cout << "Numero punti: " << mesh.Cell0DsCoordinates.cols() << endl;
+            cout << "Numero facce: " << mesh.Cell2DsVertices.size() << endl;
+
+            // Controlla che tutti i vertici referenziati esistano
+            for (size_t i = 0; i < mesh.Cell2DsVertices.size(); ++i) {
+                for (unsigned int v : mesh.Cell2DsVertices[i]) {
+                    if (v >= mesh.Cell0DsCoordinates.cols()) {
+                        cerr << "ERRORE GRAVE: Faccia " << i << " riferimento a vertice inesistente " 
+                             << v << " (max=" << mesh.Cell0DsCoordinates.cols()-1 << ")" << endl;
+                        return 1;
+                    }
+                }
+    
+            // ParaView richiede almeno 3 vertici per faccia
+                if (mesh.Cell2DsVertices[i].size() < 3) {
+                    cerr << "ERRORE: Faccia " << i << " ha solo " 
+                         << mesh.Cell2DsVertices[i].size() << " vertici" << endl;
+                    return 1;
+                }
+            }
+
+            ///////////////////////////////////////////////////////////////////////////
 
 
             UCDUtilities utilities;
