@@ -1,0 +1,46 @@
+@startuml
+title maintest.cpp
+
+start
+
+partition "Inizializzazione" {
+    :Avvio programma;
+    :Parsing argomenti CLI;
+    :Inizializza Google Test\n(::testing::InitGoogleTest);
+}
+
+partition "Esecuzione Test" {
+    :RUN_ALL_TESTS();
+    
+    partition "Test Triangolazione" {
+        :Esegui TestTriangolazione.TetraedroI;
+        :Esegui TestTriangolazione.TetraedroII;
+        :Esegui TestTriangolazione.OttaedroI;
+        :Esegui TestTriangolazione.OttaedroII;
+        :Esegui TestTriangolazione.IcosaedroI;
+        :Esegui TestTriangolazione.IcosaedroII;
+    }
+    
+    partition "Test Duale" {
+        :Esegui TestDuale.SuTriangI;
+        :Esegui TestDuale.SuTriangII;
+    }
+    
+    partition "Test Cammini" {
+        :Esegui TestCammini.SuTriangI;
+        :Esegui TestCammini.SuTriangII;
+        :Esegui TestCammini.SuDuale;
+    }
+}
+
+partition "Risultati" {
+    if (Tutti i test passati?) then (Sì)
+        :Restituisci 0 (successo);
+    else (No)
+        :Restituisci 1 (fallimento);
+    endif
+}
+
+stop
+
+@enduml

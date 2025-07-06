@@ -1,0 +1,112 @@
+@startuml
+title Test Proprietà Poliedri
+
+skinparam defaultFontName Arial
+skinparam componentStyle uml2
+left to right direction
+
+' ========== LEGENDA ==========
+legend right
+    | Colore | Significato |
+    | <#FFD700> | Moduli di Test |
+    | <#98FB98> | Funzioni Utilità |
+    | <#ADD8E6> | Core Library |
+    | <#FFB6C1> | Librerie Esterne |
+endlegend
+
+' ========== LAYER 1: TEST MODULES ==========
+package "Test Suite" <<Test>> #FFD700 {
+    component "Test Triangolazione" as TestTriang {
+        [Tetraedro I/II]
+        [Ottaedro I/II]
+        [Icosaedro I/II]
+    }
+
+    component "Test Duale" as TestDuale {
+        [Su Triang. I]
+        [Su Triang. II]
+    }
+
+    component "Test Cammini" as TestCammini {
+        [Su Triang. I]
+        [Su Triang. II]
+        [Su Duale]
+    }
+}
+
+' ========== LAYER 2: UTILITY FUNCTIONS ==========
+package "Utility" <<Utility>> #98FB98 {
+    component "Calcolo Attesi" as Calc {
+        [VerticiAttesi()]
+        [EdgesAttesi()]
+        [FacesAttese()]
+    }
+
+    component "Analisi Mesh" as Analisi {
+        [NumVerticiConVal()]
+    }
+}
+
+' ========== LAYER 3: CORE LIBRARY ==========
+package "Core Library" <<Library>> #ADD8E6 {
+    component "Mesh" as Mesh {
+        [PolyhedraMesh]
+    }
+
+    component "Algoritmi" as Algo {
+        [TriangolazioneI/II]
+        [MeshDuale]
+        [Dijkstra]
+    }
+}
+
+' ========== LAYER 4: EXTERNAL LIBS ==========
+package "Librerie Esterne" <<External>> #FFB6C1 {
+    [Google Test] as GTest
+    [Eigen] as Eigen
+}
+
+' ========== CONNESSIONI ==========
+TestTriang --> Calc
+TestTriang --> Analisi
+TestTriang --> Mesh
+TestTriang --> Algo
+
+TestDuale --> Calc
+TestDuale --> Mesh
+TestDuale --> Algo
+
+TestCammini --> Mesh
+TestCammini --> Algo
+
+Calc --> Mesh
+Analisi --> Mesh
+
+Algo --> Mesh
+Algo --> Eigen
+
+TestTriang ..> GTest
+TestDuale ..> GTest
+TestCammini ..> GTest
+
+' ========== NOTE ESPLICATIVE ==========
+note top of TestTriang
+    Verifica:
+    - Conteggio vertici/spigoli/facce
+    - Valenza vertici
+    dopo triangolazioni
+end note
+
+note bottom of TestCammini
+    Confronta percorsi trovati
+    con percorsi attesi e
+    distanze calcolate
+end note
+
+note right of Algo
+    Implementa:
+    - 2 tipi di triangolazione
+    - Trasformazione duale
+    - Algoritmo Dijkstra
+end note
+@enduml
