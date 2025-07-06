@@ -1,26 +1,45 @@
 @startuml
-namespace PolyhedraLibrary {
-  namespace FunzioniAusiliarie {
+title FunzioniAusiliarie
 
-    class TriangulationUtils {
-      + PuntoSuSpigolo(A: Vector3d, B: Vector3d, P: Vector3d, tol: double): bool
-      + AggiungiVertice(P: Vector3d, VerticesMap: map<array<double,3>,uint>, Coordinates: MatrixXd, Ids: vector<uint>, currentpoint: uint&): bool
-      + AggiungiEdge(id_P: uint, id_Q: uint, EdgesMap: map<pair<uint,uint>,uint>, Extrema: MatrixXi, Ids: vector<uint>, currentedge: uint&): bool
-      + AggiungiFaccia(id_A: uint, id_B: uint, id_C: uint, FacesVerticesMap: map<array<uint,3>,uint>, EdgesMap: const map<pair<uint,uint>,uint>, Ids: vector<uint>, FacesVertices: vector<vector<uint>>, FacesEdges: vector<vector<uint>>, currentface: uint&): bool
+skinparam defaultFontName Arial
+skinparam class {
+    BackgroundColor #F5F5F5
+    BorderColor #888
+    ArrowColor #666
+    FontSize 13
+}
+
+legend top right
+    | Colore       | Significato         |
+    | <#FFD700>    | Funzioni Core       |
+    | <#ADD8E6>    | Strutture Dati Mesh |
+    | <#98FB98>    | Tipi Eigen          |
+end legend
+
+package "FunzioniAusiliarie" <<Namespace>> {
+    class TriangulationUtils <<Utility>> #FFD700 {
+        + PuntoSuSpigolo(A: Vector3d, B: Vector3d, P: Vector3d, tol: double): bool
+        + AggiungiVertice(P: Vector3d, VerticesMap: map<array<double,3>,uint>, ...): bool
+        + AggiungiEdge(id_P: uint, id_Q: uint, EdgesMap: map<pair<uint,uint>,uint>, ...): bool
+        + AggiungiFaccia(id_A: uint, id_B: uint, id_C: uint, FacesVerticesMap: map<array<uint,3>,uint>, ...): bool
     }
-  }
 }
 
-class PolyhedraMesh {
-  // Riferimento alla struttura principale
+class PolyhedraMesh <<Struct>> #ADD8E6 {
+    + Cell0DsCoordinates
+    + Cell1DsExtrema
+    + Cell2DsVertices
+    + Cell2DsEdges
 }
 
-class Eigen {
-  class Vector3d
-  class MatrixXd
-  class MatrixXi
+package "Eigen" <<Library>> #98FB98 {
+    class Vector3d
+    class MatrixXd
+    class MatrixXi
 }
 
 TriangulationUtils --> PolyhedraMesh : Aggiorna
-TriangulationUtils --> Eigen : Usa
+TriangulationUtils --> Vector3d : Usa
+TriangulationUtils --> MatrixXd : Usa
+TriangulationUtils --> MatrixXi : Usa
 @enduml
