@@ -1,0 +1,43 @@
+@startuml
+title Dijkstra(grafo, nodo_iniziale, nodo_finale)
+
+start
+
+partition "Inizializzazione" {
+    :distanze = vettore<double>(grafo.size(), INF);
+    :predecessori = vettore<unsigned int>(grafo.size(), -1);
+    :coda_prioritaria = coda_di_priorità;
+    :predecessori[nodo_iniziale] = nodo_iniziale;
+    :distanze[nodo_iniziale] = 0.0;
+    :coda_prioritaria.aggiungi(0.0, nodo_iniziale);
+}
+
+partition "Elaborazione Grafo" {
+    while (!coda_prioritaria.vuota()) is (Sì)
+        :(dist_corrente, u) = coda_prioritaria.top();
+        :coda_prioritaria.pop();
+
+        if (u == nodo_finale) then (Sì)
+            stop
+        else (No)
+            if (dist_corrente > distanze[u]) then (Sì)
+                :// Ignora nodo obsoleto;
+            else (No)
+                :v = primo vicino di u;
+                while (v != nullptr) is (Sì)
+                    :costo_temporaneo = distanze[u] + peso(u, v);
+                    if (costo_temporaneo < distanze[v]) then (Sì)
+                        :distanze[v] = costo_temporaneo;
+                        :predecessori[v] = u;
+                        :coda_prioritaria.aggiungi(distanze[v], v);
+                    else (No)
+                    endif
+                    :v = prossimo vicino di u;
+                endwhile
+            endif
+        endif
+    endwhile
+}
+
+stop
+@enduml

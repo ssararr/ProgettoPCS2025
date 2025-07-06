@@ -1,0 +1,63 @@
+@startuml
+title OrderFaces(unordered_faces, ordered_faces, mesh)
+start
+
+:Controlla se unordered_faces è vuoto;
+if (unordered_faces.empty?) then (Sì)
+  stop
+else (No)
+  :Inizializza remaining_faces = unordered_faces;
+  :current = remaining_faces[0];
+  :ordered_faces.push_back(current);
+  :remaining_faces.erase(primo elemento);
+
+  while (!remaining_faces.empty?) is (Sì)
+    :Recupera current_edges da mesh.Cell2DsEdges[current];
+    :found = false;
+    :found_index = 0;
+    :i = 0;
+
+    while (i < remaining_faces.size?) is (Sì)
+      :Recupera candidate_edges da mesh.Cell2DsEdges[remaining_faces[i]];
+      :e1_idx = 0;
+      :edge_match = false;
+
+      while (e1_idx < current_edges.size? && !edge_match) is (Sì)
+        :e1 = current_edges[e1_idx];
+        :e2_idx = 0;
+
+        while (e2_idx < candidate_edges.size? && !edge_match) is (Sì)
+          :e2 = candidate_edges[e2_idx];
+          if (e1 == e2) then (Sì)
+            :edge_match = true;
+            :found = true;
+            :found_index = i;
+          else (No)
+            :e2_idx = e2_idx + 1;
+          endif
+        endwhile
+
+        if (!edge_match) then (Sì)
+          :e1_idx = e1_idx + 1;
+        endif
+      endwhile
+
+      if (!found) then (Sì)
+        :i = i + 1;
+      endif
+    endwhile
+
+    if (found) then (Sì)
+      :current = remaining_faces[found_index];
+      :ordered_faces.push_back(current);
+      :remaining_faces.erase(found_index);
+    else (No)
+      :current = remaining_faces[0];
+      :ordered_faces.push_back(current);
+      :remaining_faces.erase(primo elemento);
+    endif
+  endwhile
+endif
+
+stop
+@enduml

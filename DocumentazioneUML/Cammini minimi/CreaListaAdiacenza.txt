@@ -1,0 +1,30 @@
+@startuml
+title CreaListaAdiacenza(mesh)
+
+start
+
+:Inizializza grafo(mesh.NumCell0Ds);
+:Imposta precisione output a 16 cifre;
+:i = 0;
+
+while (i < mesh.NumCell1Ds) is (Sì)
+  :vertice1 = Cell1DsExtrema(0,i);
+  :vertice2 = Cell1DsExtrema(1,i);
+
+  :Calcola differenze:
+  dx = x1 - x2
+  dy = y1 - y2
+  dz = z1 - z2;
+
+  :peso = sqrt(dx² + dy² + dz²);
+
+  :Aggiungi arco non orientato:
+  grafo[vertice1] → (vertice2, peso)
+  grafo[vertice2] → (vertice1, peso);
+
+  :i = i + 1;
+endwhile
+
+:return grafo;
+stop
+@enduml

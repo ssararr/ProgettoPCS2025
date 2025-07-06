@@ -1,0 +1,58 @@
+@startuml
+title Scrittura Dati Mesh (outputFile)
+
+start
+
+partition "Inizializzazione" {
+    :Apre file di output (Cell0Ds, Cell1Ds, Cell2Ds, Cell3Ds);
+    :Verifica apertura file;
+    if (File non aperto?) then (Sì)
+        :Stampa errore;
+        stop
+    else (No)
+    endif
+}
+
+partition "Scrittura Cell0Ds" {
+    :Scrivi header "ID X Y Z";
+    :Imposta precisione a 16 cifre;
+    while (Per ogni vertice i) is (i < NumCell0Ds)
+        :Scrivi ID, coordinate X, Y, Z;
+        :i++;
+    endwhile
+    :Chiudi file Cell0Ds;
+}
+
+partition "Scrittura Cell1Ds" {
+    :Scrivi header "ID Origin End";
+    while (Per ogni spigolo i) is (i < NumCell1Ds)
+        :Scrivi ID, ID vertice origine, ID vertice fine;
+        :i++;
+    endwhile
+    :Chiudi file Cell1Ds;
+}
+
+partition "Scrittura Cell2Ds" {
+    :Scrivi header "ID NumVertices Vertices NumEdges Edges";
+    while (Per ogni faccia i) is (i < NumCell2Ds)
+        :Scrivi ID faccia, numero vertici;
+        :Scrivi lista ID vertici;
+        :Scrivi numero edges, lista ID edges;
+        :i++;
+    endwhile
+    :Chiudi file Cell2Ds;
+}
+
+partition "Scrittura Cell3Ds" {
+    :Scrivi header "ID NumVertices Vertices NumEdges Edges NumFaces Faces";
+    :Scrivi ID poliedro, numero vertici;
+    :Scrivi lista ID vertici;
+    :Scrivi numero edges, lista ID edges;
+    :Scrivi numero facce, lista ID facce;
+    :Chiudi file Cell3Ds;
+}
+
+:Restituisci true;
+stop
+
+@enduml

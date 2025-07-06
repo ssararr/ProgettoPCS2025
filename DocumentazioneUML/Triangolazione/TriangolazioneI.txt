@@ -1,0 +1,67 @@
+@startuml
+title Diagramma delle Attività - TriangolazioneI(mesh, b)
+start
+
+:Inizializza variabili:
+NewNumVertices, NewNumEdges,
+VerticesMap, edgeMap;
+
+:Alloca matrici:
+NewCell0DsCoordinates,
+NewCell1DsExtrema;
+
+:Copia vertici originali;
+
+repeat
+  :Prendi prossima faccia;
+  :Inizializza MatriceTriangolazione(b+1,b+1);
+  
+  :i = 0;
+  repeat
+    :j = 0;
+    repeat
+      :Calcola coordinate baricentriche:
+      alpha = i/b, beta = j/b,
+      gamma = (b-i-j)/b;
+      
+      :Genera punto P = αA + βB + γC;
+      
+      if (P è nuovo?) then (sì)
+        :Aggiungi vertice P;
+        :MatriceTriangolazione(i,j) = ID;
+      else (no)
+        :Recupera ID esistente;
+      endif
+      
+      :j = j + 1;
+    repeat while (j <= b - i) is (Sì)
+    :i = i + 1;
+  repeat while (i <= b) is (Sì)
+  
+  :i = 0;
+  repeat
+    :j = 0;
+    repeat
+      if (MatriceTriangolazione(i,j) valido?) then (sì)
+        :Crea triangolo diretto:
+        (i,j), (i+1,j), (i,j+1);
+        
+        :Aggiungi spigoli e faccia;
+        
+        if (j > 0?) then (sì)
+          :Crea triangolo inverso:
+          (i,j), (i+1,j), (i+1,j-1);
+          
+          :Aggiungi spigoli e faccia;
+        endif
+      endif
+      :j = j + 1;
+    repeat while (j < b) is (Sì)
+    :i = i + 1;
+  repeat while (i < b) is (Sì)
+  
+repeat while (Altre facce?) is (Sì)
+
+:Aggiorna struttura mesh;
+stop
+@enduml

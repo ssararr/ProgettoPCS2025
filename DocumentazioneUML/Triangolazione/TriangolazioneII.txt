@@ -1,0 +1,64 @@
+@startuml
+title TriangolazioneII(mesh, b)
+start
+
+:Inizializza variabili:
+NewNumV, NewNumE, EdgesOriginali;
+
+:Salva spigoli originali in EdgesOriginali;
+
+if (mesh.NumCell0Ds == 4) then (Tetraedro)
+  :NewNumV = 6b² + 6b + 2;
+  :NewNumE = 18b² + 18b + 1002;
+elseif (mesh.NumCell0Ds == 6) then (Ottaedro)
+  :NewNumV = 12b² + 12b + 2;
+  :NewNumE = 36b² + 36b + 1002;
+elseif (mesh.NumCell0Ds == 12) then (Icosaedro)
+  :NewNumV = 30b² + 30b + 2;
+  :NewNumE = 90b² + 90b + 1002;
+endif
+
+:Esegui TriangolazioneI(mesh, b);
+
+group Processa tutte le facce
+  :idx_faccia = 0;
+  while (idx_faccia < mesh.Cell2DsVertices.size()) is (Sì)
+    :faccia = mesh.Cell2DsVertices[idx_faccia];
+    
+    group Processa punti medi
+      :Calcola baricentro;
+      :Calcola m_AB, m_BC, m_CA;
+      
+      :i = 0;
+      while (i < 3) is (Sì)
+        :m = [m_AB, m_BC, m_CA][i];
+        
+        group Verifica spigoli originali
+          :j = 0;
+          :trovato = false;
+          while (j < EdgesOriginali.size() && !trovato) is (Sì)
+            if (PuntoSuSpigolo(EdgesOriginali[j], m)) then (Sì)
+              :Aggiungi vertice m;
+              :Collega m ai vertici faccia;
+              :trovato = true;
+            else (No)
+              :j = j + 1;
+            endif
+          endwhile
+          
+          if (trovato == false) then (Sì)
+            :Usa MidToBar per collegare baricentri;
+          endif
+        end group
+        
+        :i = i + 1;
+      endwhile
+    end group
+    
+    :idx_faccia = idx_faccia + 1;
+  endwhile
+end group
+
+:Aggiorna mesh con nuovi vertici/spigoli/facce;
+stop
+@enduml

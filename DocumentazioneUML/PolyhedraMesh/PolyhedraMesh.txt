@@ -1,0 +1,33 @@
+@startuml
+namespace PolyhedraLibrary {
+
+class PolyhedraMesh {
+  -- Fields --
+  - NumCell0Ds: unsigned int
+  - NumCell1Ds: unsigned int
+  - NumCell2Ds: unsigned int
+  - NumCell3Ds: unsigned int
+
+  - Cell0DsId: vector<unsigned int>
+  - Cell1DsId: vector<unsigned int>
+  - Cell2DsId: vector<unsigned int>
+  - Cell3DsId: unsigned int
+
+  - Cell0DsCoordinates: MatrixXd
+  - Cell1DsExtrema: MatrixXi
+
+  - Cell2DsNumVertices: vector<unsigned int>
+  - Cell2DsNumEdges: vector<unsigned int>
+  - Cell3DsNumVertices: unsigned int
+  - Cell3DsNumEdges: unsigned int
+  - Cell3DsNumFaces: unsigned int
+
+  - Cell2DsVertices: vector<vector<unsigned int>>
+  - Cell2DsEdges: vector<vector<unsigned int>>
+  - Cell3DsVertices: vector<unsigned int>
+  - Cell3DsEdges: vector<unsigned int>
+  - Cell3DsFaces: vector<unsigned int>
+}
+
+}
+@enduml

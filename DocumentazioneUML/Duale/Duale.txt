@@ -1,0 +1,102 @@
+@startuml
+title MeshDuale(mesh)
+
+start
+
+:Verifica mesh input;
+if (mesh.NumCell3Ds != 1) then (Sì)
+  :Stampa errore "1 cella 3D richiesta";
+  stop
+else if (mesh.Cell3DsNumFaces == 0) then (Sì)
+  :Stampa errore "Nessuna faccia";
+  stop
+endif
+
+partition "Fase 1: Vertici Duali" {
+  :Crea NewCell0DsCoordinates(3, NumFaces);
+  :faceID = 0;
+  repeat
+    :Calcola baricentro faccia faceID;
+    if (mesh.Cell2DsNumVertices[faceID] == 0) then (Sì)
+      :Stampa errore "Faccia senza vertici";
+      stop
+    endif
+    :Aggiungi a NewCell0DsCoordinates;
+    :faceID = faceID + 1;
+  repeat while (faceID < NumFaces) is (Sì)
+}
+
+partition "Fase 2: Spigoli Duali" {
+  :Crea mappa edgeToFaces;
+  :faceID = 0;
+  repeat
+    :edge_idx = 0;
+    repeat
+      :edgeID = mesh.Cell2DsEdges[faceID][edge_idx];
+      :Aggiungi a edgeToFaces[edgeID];
+      :edge_idx = edge_idx + 1;
+    repeat while (edge_idx < mesh.Cell2DsEdges[faceID].size()) is (Sì)
+    :faceID = faceID + 1;
+  repeat while (faceID < NumFaces) is (Sì)
+
+  :Crea NewCell1DsExtrema;
+  :edgeIndex = 0;
+  :entriesProcessed = 0;
+  repeat
+    :entry = edgeToFaces.entries()[entriesProcessed];
+    if (entry.second.size() == 2) then (Sì)
+      :f1 = entry.second[0];
+      :f2 = entry.second[1];
+      :Crea spigolo tra f1 e f2;
+      :edgeIndex = edgeIndex + 1;
+    else (No)
+      :Stampa warning "Spigolo non connesso";
+    endif
+    :entriesProcessed = entriesProcessed + 1;
+  repeat while (entriesProcessed < edgeToFaces.size()) is (Sì)
+}
+
+partition "Fase 3: Facce Duali" {
+  :Crea mappa vertex_to_faces;
+  :f = 0;
+  repeat
+    :v_idx = 0;
+    repeat
+      :v = mesh.Cell2DsVertices[f][v_idx];
+      :Aggiungi f a vertex_to_faces[v];
+      :v_idx = v_idx + 1;
+    repeat while (v_idx < mesh.Cell2DsVertices[f].size()) is (Sì)
+    :f = f + 1;
+  repeat while (f < mesh.Cell2DsVertices.size()) is (Sì)
+
+  :idx = 0;
+  repeat
+    :v_idx = vertex_to_faces.keys()[idx];
+    :face_ids = vertex_to_faces[v_idx];
+    
+    :OrderFaces(face_ids, orderedFaces, mesh);
+    :Crea faccia duale;
+
+    :k = 0;
+    repeat
+      :curr = orderedFaces[k];
+      :next = orderedFaces[(k+1)%orderedFaces.size()];
+      :Collega spigoli duali curr-next;
+      if (spigolo mancante?) then (Sì)
+        :Stampa errore;
+        stop
+      endif
+      :k = k + 1;
+    repeat while (k < orderedFaces.size()) is (Sì)
+    :idx = idx + 1;
+  repeat while (idx < vertex_to_faces.size()) is (Sì)
+}
+
+partition "Aggiornamento Mesh" {
+  :Aggiorna mesh.NumCell0Ds/1Ds/2Ds;
+  :Imposta Cell3Ds = 1;
+  :Stampa "Dualizzazione completata";
+}
+
+stop
+@enduml

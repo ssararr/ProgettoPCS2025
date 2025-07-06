@@ -1,0 +1,25 @@
+@startuml
+title ProiezioneSfera(meshtriangolata)
+
+start
+
+:Inizializza contatore i = 0;
+while (i < meshtriangolata.NumCell0Ds) is (Sì)
+  :Recupera coordinate:
+  x = Cell0DsCoordinates(0,i)
+  y = Cell0DsCoordinates(1,i)
+  z = Cell0DsCoordinates(2,i);
+
+  :Calcola norma:
+  norma = sqrt(x² + y² + z²);
+
+  :Normalizza coordinate:
+  Cell0DsCoordinates(0,i) = x/norma
+  Cell0DsCoordinates(1,i) = y/norma
+  Cell0DsCoordinates(2,i) = z/norma;
+
+  :i = i + 1;
+endwhile
+
+stop
+@enduml
