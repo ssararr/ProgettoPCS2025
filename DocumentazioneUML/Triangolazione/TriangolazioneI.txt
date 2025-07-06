@@ -1,68 +1,74 @@
 @startuml
-title TriangolazioneI(mesh, b)
+title Diagramma delle Attività - TriangolazioneI(mesh, b)
+
 start
 
-:Inizializza variabili:
-NewNumVertices, NewNumEdges,
-VerticesMap, edgeMap;
+partition "Inizializzazione" {
+    :Inizializza variabili:
+    NewNumVertices, NewNumEdges,
+    VerticesMap, edgeMap;
 
-:Alloca matrici:
-NewCell0DsCoordinates,
-NewCell1DsExtrema;
+    :Alloca matrici:
+    NewCell0DsCoordinates,
+    NewCell1DsExtrema;
 
-:Copia vertici originali;
+    :Copia vertici originali in nuove strutture;
+}
 
-repeat
-  :Prendi prossima faccia;
-  :Inizializza MatriceTriangolazione(b+1,b+1);
-  
-  :i = 0;
-  repeat
-    :j = 0;
-    repeat
-      :Calcola coordinate baricentriche:
-      alpha = i/b, beta = j/b,
-      gamma = (b-i-j)/b;
-      
-      :Genera punto P = αA + βB + γC;
-      
-      if (P è nuovo?) then (sì)
-        :Aggiungi vertice P;
-        :MatriceTriangolazione(i,j) = ID;
-      else (no)
-        :Recupera ID esistente;
-      endif
-      
-      :j = j + 1;
-    repeat while (j <= b - i) is (Sì)
-    :i = i + 1;
-  repeat while (i <= b) is (Sì)
-  
-  :i = 0;
-  repeat
-    :j = 0;
-    repeat
-      if (MatriceTriangolazione(i,j) valido?) then (sì)
-        :Crea triangolo diretto:
-        (i,j), (i+1,j), (i,j+1);
+partition "Processa facce" {
+    while (Faccia non processata rimasta nella mesh originale?) is (Sì)
+        :Prendi prossima faccia ABC;
+        :Inizializza MatriceTriangolazione(b+1,b+1);
         
-        :Aggiungi spigoli e faccia;
+        partition "Genera vertici" {
+            :i = 0;
+            while (i <= b? Controlla se abbiamo completato tutte le righe della griglia di triangolazione) is (Sì)
+                :j = 0;
+                while (j <= b-i? Controlla se abbiamo completato tutti i punti validi nella riga corrente) is (Sì)
+                    :Calcola P = αA+βB+γC;
+                    if (P è nuovo e non presente in VerticesMap?) then (sì)
+                        :Aggiungi vertice P;
+                        :MatriceTriangolazione(i,j) = NewNumVertices++;
+                        :Registra P in VerticesMap;
+                    else (no)
+                        :Recupera ID da VerticesMap;
+                        :MatriceTriangolazione(i,j) = ID esistente;
+                    endif
+                    :j++;
+                endwhile
+                :i++;
+            endwhile
+        }
         
-        if (j > 0?) then (sì)
-          :Crea triangolo inverso:
-          (i,j), (i+1,j), (i+1,j-1);
-          
-          :Aggiungi spigoli e faccia;
-        endif
-      endif
-      :j = j + 1;
-    repeat while (j < b) is (Sì)
-    :i = i + 1;
-  repeat while (i < b) is (Sì)
-  
-repeat while (Altre facce?) is (Sì)
+        partition "Genera triangoli" {
+            :i = 0;
+            while (i < b? Controlla se abbiamo processato tutte le righe per la generazione dei triangoli) is (Sì)
+                :j = 0;
+                while (j < b-i? Controlla se abbiamo processato tutte le colonne per la generazione dei triangoli) is (Sì)
+                    :Crea triangolo diretto:
+                    (i,j)-(i+1,j)-(i,j+1);
+                    :Aggiungi spigoli e faccia alla mesh;
+                    
+                    if (j > 0? Verifica se possiamo creare il triangolo inverso) then (sì)
+                        :Crea triangolo inverso:
+                        (i,j)-(i+1,j-1)-(i+1,j);
+                        :Aggiungi spigoli e faccia alla mesh;
+                    endif
+                    :j++;
+                endwhile
+                :i++;
+            endwhile
+        }
+    endwhile
+}
 
-:Aggiorna struttura mesh;
+partition "Aggiornamento" {
+    :Sostituisci strutture mesh originali con nuove strutture;
+    :Aggiorna contatori:
+    NumCell0Ds = NewNumVertices,
+    NumCell1Ds = NewNumEdges,
+    NumCell2Ds = numero facce generate;
+}
+
 stop
 @enduml
-

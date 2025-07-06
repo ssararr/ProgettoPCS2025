@@ -1,0 +1,84 @@
+@startuml
+title main.cpp
+
+start
+
+partition "Input Utente" {
+    :Leggi parametri da riga di comando;
+    if (Numero argomenti == 5) then (Triangolazione)
+        :p, q, b, c = parametri;
+    else if (Numero argomenti == 7) then (Cammini Minimi)
+        :p, q, b, c, nodo_iniziale, nodo_finale = parametri;
+    else (Errore)
+        :Stampa "Input non valido";
+        stop
+    endif
+}
+
+partition "Classificazione Poliedro" {
+    :ClassificaPoliedro(p, q, duale);
+    if (Poliedro == "Errore") then (Sì)
+        :Stampa "Poliedro non riconosciuto";
+        stop
+    else (No)
+        :Stampa tipo poliedro e stato duale;
+    endif
+}
+
+partition "Gestione Mesh" {
+    :ImportMesh(mesh, Poliedro);
+    if (Import fallito?) then (Sì)
+        :Stampa errore;
+        stop
+    else (No)
+    endif
+
+    if (b>0 AND c==0) then (Triang. Tipo I)
+        :TriangolazioneI(mesh, b);
+    else if (b==0 AND c>0) then (Triang. Tipo I)
+        :TriangolazioneI(mesh, c);
+    else if (b>0 AND c==b) then (Triang. Tipo II)
+        :TriangolazioneII(mesh, b);
+    else (Nessuna triangolazione)
+        :Stampa "Dati non validi";
+    endif
+
+    if (duale == true) then (Sì)
+        :MeshDuale(mesh);
+        :Aggiorna nome poliedro;
+    else (No)
+    endif
+}
+
+partition "Cammini Minimi" {
+    if (Argomenti == 7) then (Sì)
+        if (Nodi validi?) then (No)
+            :Stampa errore;
+            stop
+        else if (Nodi uguali?) then (Sì)
+            :Stampa distanza 0;
+        else (No)
+            :CreaListaAdiacenza(mesh);
+            :Dijkstra(percorso, distanza);
+            if (Percorso trovato?) then (Sì)
+                :Stampa percorso e distanza;
+            else (No)
+                :Stampa "Nessun percorso";
+            endif
+        endif
+    else (No)
+    endif
+}
+
+partition "Esportazione Risultati" {
+    :ProiezioneSfera(mesh);
+    :outputFile(mesh, "Cell0Ds.txt", ...);
+    :ExportPoints/Segments per ParaView;
+    if (Cammini minimi?) then (Sì)
+        :Aggiungi proprietà colorazione;
+    endif
+}
+
+stop
+
+@enduml
