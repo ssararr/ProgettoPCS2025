@@ -1,5 +1,5 @@
 @startuml
-title Diagramma delle Attività - TriangolazioneI(mesh, b)
+title TriangolazioneI(mesh, b)
 start
 
 :Inizializza variabili:
@@ -65,3 +65,4 @@ repeat while (Altre facce?) is (Sì)
 :Aggiorna struttura mesh;
 stop
 @enduml
+
