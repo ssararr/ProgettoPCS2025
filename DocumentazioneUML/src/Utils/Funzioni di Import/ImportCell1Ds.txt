@@ -1,0 +1,54 @@
+@startuml
+scale 800 width
+title ImportCell1Ds
+
+start
+
+partition "1. APERTURA FILE" {
+    :Verifica tipo poliedro;
+    if (Poliedro == "Tetraedro") then (sì)
+        :Apri file Tetraedro;
+    else if (Poliedro == "Icosaedro") then (sì)
+        :Apri file Icosaedro;
+    else if (Poliedro == "Ottaedro") then (sì)
+        :Apri file Ottaedro;
+    else (no)
+        :Errore: Nome non valido;
+        stop
+    endif
+}
+
+partition "2. CONTROLLO FILE" {
+    if (file.fail()) then (sì)
+        :Errore apertura file;
+        stop
+    else (no)
+        :Leggi tutte le righe;
+        :Elimina intestazione;
+        :NumCell1Ds = n.righe;
+    endif
+}
+
+partition "3. INIZIALIZZAZIONE" {
+    if (NumCell1Ds == 0) then (sì)
+        :Errore: Nessuno spigolo;
+        stop
+    else (no)
+        :Alloca Cell1DsId;
+        :Crea matrice 2xN;
+    endif
+}
+
+partition "4. ELABORAZIONE" {
+    while (Righe da processare?) is (sì)
+        :Leggi ID e estremi;
+        :Salva in strutture;
+    endwhile
+}
+
+partition "5. CHIUSURA" {
+    :return true;
+}
+
+stop
+@enduml

@@ -1,0 +1,74 @@
+@startuml
+title **Utils.cpp**\nPolyhedra Mesh Importer
+
+skinparam component {
+    BackgroundColor<<Main>> #E6E6FA
+    BackgroundColor<<Importer>> #FFD700
+    BackgroundColor<<File>> #87CEFA
+    BorderColor #333333
+    ArrowColor #444444
+    FontName Arial
+}
+
+skinparam node {
+    shadowing false
+    stereotypeFontSize 10
+}
+
+' Componenti principali
+component [ImportMesh] <<Main>> #Lavender {
+    component [ImportCell0Ds] <<Importer>> #Gold
+    component [ImportCell1Ds] <<Importer>> #Gold
+    component [ImportCell2Ds] <<Importer>> #Gold
+    component [ImportCell3Ds] <<Importer>> #Gold
+}
+
+' File system
+database "File System" <<File>> #LightBlue {
+    folder "CSV Files" as csv {
+        file "Cell0Ds.csv" <<File>> #LightCyan
+        file "Cell1Ds.csv" <<File>> #LightCyan
+        file "Cell2Ds.csv" <<File>> #LightCyan
+        file "Cell3Ds.csv" <<File>> #LightCyan
+    }
+}
+
+' Relazioni
+[ImportMesh] --> [ImportCell0Ds] : <color:#6A5ACD>1. Punti</color>
+[ImportMesh] --> [ImportCell1Ds] : <color:#6A5ACD>2. Spigoli</color>
+[ImportMesh] --> [ImportCell2Ds] : <color:#6A5ACD>3. Facce</color>
+[ImportMesh] --> [ImportCell3Ds] : <color:#6A5ACD>4. Poliedri</color>
+
+[ImportCell0Ds] --> [Cell0Ds.csv] : <color:#4682B4>read
+[ImportCell1Ds] --> [Cell1Ds.csv] : <color:#4682B4>read
+[ImportCell2Ds] --> [Cell2Ds.csv] : <color:#4682B4>read
+[ImportCell3Ds] --> [Cell3Ds.csv] : <color:#4682B4>read
+
+' Legenda
+legend top right
+    <color:#E6E6FA>█</color> Main Component |
+    <color:#FFD700>█</color> Mesh Importers |
+    <color:#87CEFA>█</color> File System |
+    <color:#6A5ACD>→</color> Control Flow |
+    <color:#4682B4>→</color> Data Access
+endlegend
+
+' Note
+note right of [ImportMesh]
+    <b>Flusso Sequenziale:</b>
+    1. Esegue in ordine 0D→1D→2D→3D
+    2. Interrompe al primo fallimento
+    3. Ogni step popola la struttura
+      PolyhedraMesh
+end note
+
+note bottom of csv
+    <b>Struttura File:</b>
+    ──────────────────
+    <color:#4682B4>• Cell0Ds.csv:</color> ID, X, Y, Z
+    <color:#4682B4>• Cell1Ds.csv:</color> ID, V1, V2
+    <color:#4682B4>• Cell2Ds.csv:</color> ID, Vertices[], Edges[]
+    <color:#4682B4>• Cell3Ds.csv:</color> ID, Vertices[], Edges[], Faces[]
+end note
+
+@enduml

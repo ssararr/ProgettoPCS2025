@@ -1,0 +1,48 @@
+@startuml
+title **ImportMesh**
+
+start
+
+:Inizio ImportMesh(mesh, Poliedro);
+note right
+**Parametri:**
+- mesh: PolyhedraMesh&
+- Poliedro: string
+end note
+
+partition "Importazione Gerarchica" {
+    :ImportCell0Ds(mesh, Poliedro);
+    if (Successo?) then (Sì)
+        :ImportCell1Ds(mesh, Poliedro);
+        if (Successo?) then (Sì)
+            :ImportCell2Ds(mesh, Poliedro);
+            if (Successo?) then (Sì)
+                :ImportCell3Ds(mesh, Poliedro);
+                if (Successo?) then (Sì)
+                    :Tutte le importazioni completate;
+                    stop
+                else (No)
+                    :**ERRORE** ImportCell3Ds fallita;
+                    stop
+                endif
+            else (No)
+                :**ERRORE** ImportCell2Ds fallita;
+                stop
+            endif
+        else (No)
+            :**ERRORE** ImportCell1Ds fallita;
+            stop
+        endif
+    else (No)
+        :**ERRORE** ImportCell0Ds fallita;
+        stop
+    endif
+}
+
+legend top right
+    → Flusso normale
+    → Sequenza logica
+    **ERRORE** Percorsi di fallimento
+endlegend
+
+@enduml
