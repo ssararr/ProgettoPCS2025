@@ -75,6 +75,7 @@ namespace PolyhedraLibrary {
 
 bool MeshDuale(PolyhedraMesh& mesh) 
 {
+    
     /////////////////////////////////////////////////////////////////////////////7
 
     // 1. VERIFICA DELLA MESH ORIGINALE
@@ -89,11 +90,13 @@ bool MeshDuale(PolyhedraMesh& mesh)
         return false;
     }
 
+    /*
     cout << "\n=== INIZIO DUALIZZAZIONE ===" << endl;
     cout << "Facce originali: " << NumFaces << endl;
-    cout << "Vertici originali: " << mesh.NumCell0Ds << endl;
+    cout << "Vertici originali: " << mesh.NumCell0Ds << endl; */
 
     //////////////////////////////////////////////////////////////////////////////
+    
 
     // 2. CREAZIONE VERTICI DUALI (BARICENTRI DELLE FACCE)
     vector<unsigned int> NewCell0DsId(NumFaces);
@@ -217,14 +220,15 @@ bool MeshDuale(PolyhedraMesh& mesh)
         NewCell2DsEdges.push_back(dualFaceEdges);
     }
 
+    /*
     ///////////////////////////////////////////////////
-
     // 5. VERIFICHE FINALI
     cout << "\n=== VERIFICHE FINALI ===" << endl;
     cout << "Facce duali create: " << NewCell2DsId.size() << endl;
     cout << "Vertici problematici: " << problematic_vertices.size() << endl;    
 
     /////////////////////////////////////////////////////
+    */
 
     // 6. AGGIORNAMENTO MESH DUALE
     mesh.NumCell0Ds = NumFaces;

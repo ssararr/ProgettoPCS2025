@@ -24,7 +24,9 @@ bool ImportMesh(PolyhedraMesh& mesh, string Poliedro) //funzione che importa una
         return false;
     
     if(!ImportCell3Ds(mesh, Poliedro)) //importo la funzione per i dati relativi ai POLIEDRI
-        {return false;}
+        return false;
+    
+    return true; //se tutte le funzioni sono andate a buon fine, restituisco true
 }
 
 
@@ -44,7 +46,11 @@ bool ImportCell0Ds(PolyhedraMesh& mesh, string Poliedro) //funzione per importar
     else if(Poliedro == "Ottaedro"){
         file.open("../Ottaedro/Ottaedro_Cell0Ds.csv");
     }
-    else {cout << "Il nome della stringa non è valido" << endl;}
+    else 
+    {
+        cout << "Il nome della stringa non è valido o il poliedro indicato non esiste" << endl;
+        return false; //se il nome della stringa non è valido, restituisco false
+    }
 
 
     if(file.fail()){
@@ -67,7 +73,7 @@ bool ImportCell0Ds(PolyhedraMesh& mesh, string Poliedro) //funzione per importar
 
     if (mesh.NumCell0Ds == 0)
     {
-        cerr << "There is no cell 0D" << endl; //se non ci sono righe
+        cerr << "Non esistono celle 0D" << endl; //se non ci sono righe
         return false;
     }
 
@@ -102,7 +108,11 @@ bool ImportCell1Ds(PolyhedraMesh& mesh, string Poliedro) //implemento la funzion
     else if(Poliedro == "Ottaedro"){
         file.open("../Ottaedro/Ottaedro_Cell1Ds.csv");
     }
-    else {cout << "Il nome della stringa non è valido" << endl;}
+    else 
+    {
+        cout << "Il nome della stringa non è valido o il poliedro indicato non esiste" << endl;
+        return false;
+    }
 
     if(file.fail()){
 
@@ -126,7 +136,7 @@ bool ImportCell1Ds(PolyhedraMesh& mesh, string Poliedro) //implemento la funzion
 
     if (mesh.NumCell1Ds == 0) //nel caso la dimensione sia nulla gestisco l'errore
     {
-        cerr << "There is no cell 1D" << endl;
+        cerr << "Non esistono celle 1D" << endl;
         return false;
     }
 
@@ -164,7 +174,11 @@ bool ImportCell2Ds(PolyhedraMesh& mesh, string Poliedro)
     else if(Poliedro == "Ottaedro"){
         file.open("../Ottaedro/Ottaedro_Cell2Ds.csv");
     }
-    else {cout << "Il nome della stringa non è valido" << endl;}
+    else 
+    {
+        cout << "Il nome della stringa non è valido o il poliedro indicato non esiste" << endl;
+        return false;
+    }
 
     if(file.fail()){
 
@@ -258,9 +272,14 @@ bool ImportCell3Ds(PolyhedraMesh& mesh, string Poliedro) //implemento la funzion
     else if(Poliedro == "Ottaedro"){;
         file.open("../Ottaedro/Ottaedro_Cell3Ds.csv");
     }
-    else {cout << "Il nome della stringa non è valido" << endl;}
+    else 
+    {
+        cout << "Il nome della stringa non è valido o il poliedro indicato non esiste" << endl;
+        return false;
+    }
 
-    if(file.fail()){
+    if(file.fail())
+    {
 
         cout << "Errore nell'apertura del file" << endl;
         return false;
@@ -282,7 +301,7 @@ bool ImportCell3Ds(PolyhedraMesh& mesh, string Poliedro) //implemento la funzion
 
     if (mesh.NumCell3Ds == 0) //nel caso la dimensione sia nulla gestisco l'errore
     {
-        cerr << "There is no cell 3D" << endl;
+        cerr << "Non esistono celle 3D" << endl;
         return false;
     }
 

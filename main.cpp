@@ -96,6 +96,7 @@ int main(int argc, char *argv[]){
 
         if(!ImportMesh(mesh, Poliedro)){
             cerr << "La mesh non viene riempita correttamente" << endl;
+            return 1; //se la mesh non viene riempita correttamente, esco dal programma
         }
 
         // Triangolazione del poliedro
@@ -130,21 +131,6 @@ int main(int argc, char *argv[]){
         
         //proiezione su una sfera
         ProiezioneSfera(mesh); 
-
-
-        //////////////////////////////////////////////////////////////////////////
-        //CONTROLLI PRE ESPORTAZIONE        
-        cout << "\n=== VERIFICA PER PARAVIEW ===" << endl;        
-        cout << "Numero vertici: " << mesh.Cell0DsCoordinates.cols() << endl;
-        cout << "Numero facce: " << mesh.Cell2DsVertices.size() << endl;
-        ///////////////////////////////////////////////////////////////////////////
-
-        // Controlla permessi di scrittura
-        ofstream test_file("./Cell2Ds.inp");
-        if (!test_file) {
-            cerr << "ERRORE: Impossibile scrivere in ./Cell2Ds.inp (problema di permessi?)" << endl;
-            return 1;
-        }
 
 
         //output della mesh triangolata
@@ -190,7 +176,8 @@ int main(int argc, char *argv[]){
         PolyhedraMesh mesh;
 
         if(!ImportMesh(mesh, Poliedro)){
-            cerr << "La mesh non viene riempita correttamente" << endl;
+            cerr << "La mesh non viene riempita correttamente" << endl; //se la mesh non viene riempita correttamente, esco dal programma
+            return 1;
         }
 
         // Triangolazione del poliedro
@@ -327,13 +314,6 @@ int main(int argc, char *argv[]){
 
             vector<UCDProperty<double>> PropSegmenti;
             PropSegmenti.push_back(PropSegmentiCammino);
-
-            //////////////////////////////////////////////////////////////////////////
-            //CONTROLLI PRE ESPORTAZIONE
-            // Verifica la consistenza della mesh per ParaView                        
-            cout << "Numero vertici: " << mesh.Cell0DsCoordinates.cols() << endl;
-            cout << "Numero facce: " << mesh.Cell2DsVertices.size() << endl;
-            ///////////////////////////////////////////////////////////////////////////
 
 
             UCDUtilities utilities;
